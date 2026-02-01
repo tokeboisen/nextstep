@@ -22,7 +22,7 @@ public class GetAthleteProfileQueryHandlerTests
     {
         // Arrange
         var athlete = Athlete.Create("John Doe", new DateOnly(1990, 5, 15));
-        athlete.UpdatePhysiologicalData(185, 165);
+        athlete.UpdatePhysiologicalData(185, 165, TimeSpan.FromMinutes(4.5));
         athlete.UpdateTrainingAccess(true);
 
         _athleteRepository.GetSingleAthleteAsync(Arg.Any<CancellationToken>())
@@ -36,7 +36,11 @@ public class GetAthleteProfileQueryHandlerTests
         result!.Id.Should().Be(athlete.Id);
         result.PersonalInfo.Name.Should().Be("John Doe");
         result.PhysiologicalData.MaxHeartRate.Should().Be(185);
+        result.PhysiologicalData.LactateThresholdHeartRate.Should().Be(165);
+        result.PhysiologicalData.LactateThresholdPace.Should().Be("4:30");
         result.TrainingAccess.HasTrackAccess.Should().BeTrue();
+        result.HeartRateZones.Should().HaveCount(5);
+        result.PaceZones.Should().HaveCount(5);
     }
 
     [Fact]
@@ -51,5 +55,23 @@ public class GetAthleteProfileQueryHandlerTests
 
         // Assert
         result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_WhenAthleteHasNoLactateThreshold_ShouldReturnEmptyZones()
+    {
+        // Arrange
+        var athlete = Athlete.Create("John Doe", new DateOnly(1990, 5, 15));
+
+        _athleteRepository.GetSingleAthleteAsync(Arg.Any<CancellationToken>())
+            .Returns(athlete);
+
+        // Act
+        var result = await _handler.Handle(new GetAthleteProfileQuery(), CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.HeartRateZones.Should().BeEmpty();
+        result.PaceZones.Should().BeEmpty();
     }
 }

@@ -22,24 +22,26 @@ public class HeartRateZone : ValueObject
         MaxBpm = maxBpm;
     }
 
-    public static HeartRateZone Create(int zoneNumber, string name, int minBpm, int maxBpm)
+    public static IReadOnlyList<HeartRateZone> CalculateFromLactateThreshold(int lactateThresholdHeartRate)
     {
-        if (zoneNumber < 1 || zoneNumber > 6)
-            throw new ArgumentException("Zone number must be between 1 and 6", nameof(zoneNumber));
+        if (lactateThresholdHeartRate < 80 || lactateThresholdHeartRate > 220)
+            throw new ArgumentException("Lactate threshold heart rate must be between 80 and 220 bpm", nameof(lactateThresholdHeartRate));
 
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Zone name cannot be empty", nameof(name));
+        var lthr = lactateThresholdHeartRate;
 
-        if (minBpm < 50 || minBpm > 250)
-            throw new ArgumentException("Min BPM must be between 50 and 250", nameof(minBpm));
-
-        if (maxBpm < 50 || maxBpm > 250)
-            throw new ArgumentException("Max BPM must be between 50 and 250", nameof(maxBpm));
-
-        if (minBpm >= maxBpm)
-            throw new ArgumentException("Min BPM must be less than Max BPM", nameof(minBpm));
-
-        return new HeartRateZone(zoneNumber, name.Trim(), minBpm, maxBpm);
+        return new List<HeartRateZone>
+        {
+            // Zone 1 (Recovery): < 81% of LTHR
+            new(1, "Recovery", (int)(lthr * 0.50), (int)(lthr * 0.80)),
+            // Zone 2 (Aerobic): 81-89% of LTHR
+            new(2, "Aerobic", (int)(lthr * 0.81), (int)(lthr * 0.89)),
+            // Zone 3 (Tempo): 90-95% of LTHR
+            new(3, "Tempo", (int)(lthr * 0.90), (int)(lthr * 0.95)),
+            // Zone 4 (Threshold): 96-100% of LTHR
+            new(4, "Threshold", (int)(lthr * 0.96), lthr),
+            // Zone 5 (VO2max): > 100% of LTHR
+            new(5, "VO2max", lthr + 1, (int)(lthr * 1.15))
+        };
     }
 
     protected override IEnumerable<object?> GetEqualityComponents()

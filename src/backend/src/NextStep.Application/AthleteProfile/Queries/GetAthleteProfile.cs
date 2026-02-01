@@ -31,7 +31,8 @@ public class GetAthleteProfileQueryHandler : IRequestHandler<GetAthleteProfileQu
             ),
             new PhysiologicalDataDto(
                 athlete.PhysiologicalData.MaxHeartRate,
-                athlete.PhysiologicalData.LactateThreshold
+                athlete.PhysiologicalData.LactateThresholdHeartRate,
+                FormatPace(athlete.PhysiologicalData.LactateThresholdPace)
             ),
             new TrainingAccessDto(
                 athlete.TrainingAccess.HasTrackAccess
@@ -49,5 +50,13 @@ public class GetAthleteProfileQueryHandler : IRequestHandler<GetAthleteProfileQu
                 z.FormatMaxPace()
             )).ToList()
         );
+    }
+
+    private static string? FormatPace(TimeSpan? pace)
+    {
+        if (!pace.HasValue)
+            return null;
+
+        return $"{(int)pace.Value.TotalMinutes}:{pace.Value.Seconds:D2}";
     }
 }

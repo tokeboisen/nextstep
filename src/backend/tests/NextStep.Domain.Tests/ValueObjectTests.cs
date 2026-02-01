@@ -57,29 +57,31 @@ public class PhysiologicalDataTests
     public void Create_WithValidData_ShouldCreatePhysiologicalData()
     {
         // Arrange & Act
-        var data = PhysiologicalData.Create(185, 165);
+        var data = PhysiologicalData.Create(185, 165, TimeSpan.FromMinutes(4.5));
 
         // Assert
         data.MaxHeartRate.Should().Be(185);
-        data.LactateThreshold.Should().Be(165);
+        data.LactateThresholdHeartRate.Should().Be(165);
+        data.LactateThresholdPace.Should().Be(TimeSpan.FromMinutes(4.5));
     }
 
     [Fact]
     public void Create_WithNullValues_ShouldAllowNulls()
     {
         // Arrange & Act
-        var data = PhysiologicalData.Create(null, null);
+        var data = PhysiologicalData.Create(null, null, null);
 
         // Assert
         data.MaxHeartRate.Should().BeNull();
-        data.LactateThreshold.Should().BeNull();
+        data.LactateThresholdHeartRate.Should().BeNull();
+        data.LactateThresholdPace.Should().BeNull();
     }
 
     [Fact]
     public void Create_WithMaxHeartRateTooLow_ShouldThrow()
     {
         // Arrange & Act
-        var act = () => PhysiologicalData.Create(50, null);
+        var act = () => PhysiologicalData.Create(50, null, null);
 
         // Assert
         act.Should().Throw<ArgumentException>().WithMessage("*Max heart rate*");
@@ -89,75 +91,135 @@ public class PhysiologicalDataTests
     public void Create_WithLactateThresholdHigherThanMax_ShouldThrow()
     {
         // Arrange & Act
-        var act = () => PhysiologicalData.Create(180, 190);
+        var act = () => PhysiologicalData.Create(180, 190, null);
 
         // Assert
         act.Should().Throw<ArgumentException>().WithMessage("*exceed*");
+    }
+
+    [Fact]
+    public void Create_WithPaceTooFast_ShouldThrow()
+    {
+        // Arrange & Act
+        var act = () => PhysiologicalData.Create(null, null, TimeSpan.FromMinutes(1.5));
+
+        // Assert
+        act.Should().Throw<ArgumentException>().WithMessage("*Lactate threshold pace*");
+    }
+
+    [Fact]
+    public void Create_WithPaceTooSlow_ShouldThrow()
+    {
+        // Arrange & Act
+        var act = () => PhysiologicalData.Create(null, null, TimeSpan.FromMinutes(12));
+
+        // Assert
+        act.Should().Throw<ArgumentException>().WithMessage("*Lactate threshold pace*");
     }
 }
 
 public class HeartRateZoneTests
 {
     [Fact]
-    public void Create_WithValidData_ShouldCreateZone()
+    public void CalculateFromLactateThreshold_WithValidLTHR_ShouldReturn5Zones()
     {
         // Arrange & Act
-        var zone = HeartRateZone.Create(1, "Recovery", 100, 120);
+        var zones = HeartRateZone.CalculateFromLactateThreshold(165);
 
         // Assert
-        zone.ZoneNumber.Should().Be(1);
-        zone.Name.Should().Be("Recovery");
-        zone.MinBpm.Should().Be(100);
-        zone.MaxBpm.Should().Be(120);
+        zones.Should().HaveCount(5);
+        zones[0].ZoneNumber.Should().Be(1);
+        zones[0].Name.Should().Be("Recovery");
+        zones[4].ZoneNumber.Should().Be(5);
+        zones[4].Name.Should().Be("VO2max");
     }
 
     [Fact]
-    public void Create_WithInvalidZoneNumber_ShouldThrow()
+    public void CalculateFromLactateThreshold_ShouldCalculateCorrectBpmRanges()
     {
-        // Arrange & Act
-        var act = () => HeartRateZone.Create(0, "Invalid", 100, 120);
+        // Arrange
+        var lthr = 170;
+
+        // Act
+        var zones = HeartRateZone.CalculateFromLactateThreshold(lthr);
 
         // Assert
-        act.Should().Throw<ArgumentException>().WithMessage("*Zone number*");
+        // Zone 1 (Recovery): 50-80% of LTHR
+        zones[0].MinBpm.Should().Be(85);  // 170 * 0.50
+        zones[0].MaxBpm.Should().Be(136); // 170 * 0.80
+
+        // Zone 4 (Threshold): 96-100% of LTHR
+        zones[3].MinBpm.Should().Be(163); // 170 * 0.96
+        zones[3].MaxBpm.Should().Be(170); // 170 * 1.00
     }
 
     [Fact]
-    public void Create_WithMinGreaterThanMax_ShouldThrow()
+    public void CalculateFromLactateThreshold_WithInvalidLTHR_ShouldThrow()
     {
         // Arrange & Act
-        var act = () => HeartRateZone.Create(1, "Invalid", 150, 100);
+        var act = () => HeartRateZone.CalculateFromLactateThreshold(50);
 
         // Assert
-        act.Should().Throw<ArgumentException>().WithMessage("*less than*");
+        act.Should().Throw<ArgumentException>().WithMessage("*Lactate threshold heart rate*");
     }
 }
 
 public class PaceZoneTests
 {
     [Fact]
-    public void Create_WithValidData_ShouldCreateZone()
+    public void CalculateFromLactateThreshold_WithValidPace_ShouldReturn5Zones()
     {
         // Arrange & Act
-        var zone = PaceZone.Create(1, "Easy", TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(6));
+        var zones = PaceZone.CalculateFromLactateThreshold(TimeSpan.FromMinutes(4.5));
 
         // Assert
-        zone.ZoneNumber.Should().Be(1);
-        zone.Name.Should().Be("Easy");
-        zone.MinPacePerKm.Should().Be(TimeSpan.FromMinutes(5));
-        zone.MaxPacePerKm.Should().Be(TimeSpan.FromMinutes(6));
+        zones.Should().HaveCount(5);
+        zones[0].ZoneNumber.Should().Be(1);
+        zones[0].Name.Should().Be("Recovery");
+        zones[4].ZoneNumber.Should().Be(5);
+        zones[4].Name.Should().Be("VO2max");
+    }
+
+    [Fact]
+    public void CalculateFromLactateThreshold_ShouldCalculateCorrectPaceRanges()
+    {
+        // Arrange
+        var ltp = TimeSpan.FromMinutes(5); // 5:00 min/km
+
+        // Act
+        var zones = PaceZone.CalculateFromLactateThreshold(ltp);
+
+        // Assert
+        // Zone 1 (Recovery): 129-150% of LTP (slowest)
+        zones[0].MinPacePerKm.Should().BeCloseTo(TimeSpan.FromSeconds(300 * 1.29), TimeSpan.FromSeconds(1));
+        zones[0].MaxPacePerKm.Should().BeCloseTo(TimeSpan.FromSeconds(300 * 1.50), TimeSpan.FromSeconds(1));
+
+        // Zone 4 (Threshold): 99-105% of LTP
+        zones[3].MinPacePerKm.Should().BeCloseTo(TimeSpan.FromSeconds(300 * 0.99), TimeSpan.FromSeconds(1));
+        zones[3].MaxPacePerKm.Should().BeCloseTo(TimeSpan.FromSeconds(300 * 1.05), TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public void CalculateFromLactateThreshold_WithInvalidPace_ShouldThrow()
+    {
+        // Arrange & Act
+        var act = () => PaceZone.CalculateFromLactateThreshold(TimeSpan.FromMinutes(1));
+
+        // Assert
+        act.Should().Throw<ArgumentException>().WithMessage("*Lactate threshold pace*");
     }
 
     [Fact]
     public void FormatMinPace_ShouldReturnFormattedString()
     {
         // Arrange
-        var zone = PaceZone.Create(1, "Easy", new TimeSpan(0, 5, 30), new TimeSpan(0, 6, 0));
+        var zones = PaceZone.CalculateFromLactateThreshold(TimeSpan.FromMinutes(5));
 
         // Act
-        var formatted = zone.FormatMinPace();
+        var formatted = zones[3].FormatMinPace();
 
         // Assert
-        formatted.Should().Be("5:30");
+        formatted.Should().MatchRegex(@"\d+:\d{2}");
     }
 }
 

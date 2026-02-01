@@ -9,11 +9,8 @@ public class Athlete : Entity<Guid>
     public PhysiologicalData PhysiologicalData { get; private set; } = null!;
     public TrainingAccess TrainingAccess { get; private set; } = null!;
 
-    private readonly List<HeartRateZone> _heartRateZones = new();
-    public IReadOnlyList<HeartRateZone> HeartRateZones => _heartRateZones.AsReadOnly();
-
-    private readonly List<PaceZone> _paceZones = new();
-    public IReadOnlyList<PaceZone> PaceZones => _paceZones.AsReadOnly();
+    public IReadOnlyList<HeartRateZone> HeartRateZones => CalculateHeartRateZones();
+    public IReadOnlyList<PaceZone> PaceZones => CalculatePaceZones();
 
     private Athlete() : base() { }
 
@@ -41,9 +38,9 @@ public class Athlete : Entity<Guid>
         PersonalInfo = PersonalInfo.Create(name, birthDate);
     }
 
-    public void UpdatePhysiologicalData(int? maxHeartRate, int? lactateThreshold)
+    public void UpdatePhysiologicalData(int? maxHeartRate, int? lactateThresholdHeartRate, TimeSpan? lactateThresholdPace)
     {
-        PhysiologicalData = PhysiologicalData.Create(maxHeartRate, lactateThreshold);
+        PhysiologicalData = PhysiologicalData.Create(maxHeartRate, lactateThresholdHeartRate, lactateThresholdPace);
     }
 
     public void UpdateTrainingAccess(bool hasTrackAccess)
@@ -51,39 +48,19 @@ public class Athlete : Entity<Guid>
         TrainingAccess = TrainingAccess.Create(hasTrackAccess);
     }
 
-    public void SetHeartRateZones(IEnumerable<HeartRateZone> zones)
+    private IReadOnlyList<HeartRateZone> CalculateHeartRateZones()
     {
-        var zoneList = zones.ToList();
+        if (!PhysiologicalData.LactateThresholdHeartRate.HasValue)
+            return Array.Empty<HeartRateZone>();
 
-        ValidateZones(zoneList.Select(z => z.ZoneNumber).ToList());
-
-        _heartRateZones.Clear();
-        _heartRateZones.AddRange(zoneList.OrderBy(z => z.ZoneNumber));
+        return HeartRateZone.CalculateFromLactateThreshold(PhysiologicalData.LactateThresholdHeartRate.Value);
     }
 
-    public void SetPaceZones(IEnumerable<PaceZone> zones)
+    private IReadOnlyList<PaceZone> CalculatePaceZones()
     {
-        var zoneList = zones.ToList();
+        if (!PhysiologicalData.LactateThresholdPace.HasValue)
+            return Array.Empty<PaceZone>();
 
-        ValidateZones(zoneList.Select(z => z.ZoneNumber).ToList());
-
-        _paceZones.Clear();
-        _paceZones.AddRange(zoneList.OrderBy(z => z.ZoneNumber));
-    }
-
-    public void ClearHeartRateZones()
-    {
-        _heartRateZones.Clear();
-    }
-
-    public void ClearPaceZones()
-    {
-        _paceZones.Clear();
-    }
-
-    private static void ValidateZones(List<int> zoneNumbers)
-    {
-        if (zoneNumbers.Count != zoneNumbers.Distinct().Count())
-            throw new ArgumentException("Duplicate zone numbers are not allowed");
+        return PaceZone.CalculateFromLactateThreshold(PhysiologicalData.LactateThresholdPace.Value);
     }
 }

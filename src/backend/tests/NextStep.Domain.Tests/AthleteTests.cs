@@ -1,6 +1,5 @@
 using FluentAssertions;
 using NextStep.Domain.AthleteProfile.Entities;
-using NextStep.Domain.AthleteProfile.ValueObjects;
 
 namespace NextStep.Domain.Tests;
 
@@ -48,11 +47,12 @@ public class AthleteTests
         var athlete = Athlete.Create("John Doe", new DateOnly(1990, 5, 15));
 
         // Act
-        athlete.UpdatePhysiologicalData(185, 165);
+        athlete.UpdatePhysiologicalData(185, 165, TimeSpan.FromMinutes(4.5));
 
         // Assert
         athlete.PhysiologicalData.MaxHeartRate.Should().Be(185);
-        athlete.PhysiologicalData.LactateThreshold.Should().Be(165);
+        athlete.PhysiologicalData.LactateThresholdHeartRate.Should().Be(165);
+        athlete.PhysiologicalData.LactateThresholdPace.Should().Be(TimeSpan.FromMinutes(4.5));
     }
 
     [Fact]
@@ -69,58 +69,67 @@ public class AthleteTests
     }
 
     [Fact]
-    public void SetHeartRateZones_WithValidZones_ShouldSetZones()
+    public void HeartRateZones_WithoutLactateThreshold_ShouldBeEmpty()
     {
         // Arrange
         var athlete = Athlete.Create("John Doe", new DateOnly(1990, 5, 15));
-        var zones = new[]
-        {
-            HeartRateZone.Create(1, "Recovery", 100, 120),
-            HeartRateZone.Create(2, "Aerobic", 120, 140),
-        };
 
-        // Act
-        athlete.SetHeartRateZones(zones);
-
-        // Assert
-        athlete.HeartRateZones.Should().HaveCount(2);
-        athlete.HeartRateZones[0].ZoneNumber.Should().Be(1);
-        athlete.HeartRateZones[1].ZoneNumber.Should().Be(2);
+        // Act & Assert
+        athlete.HeartRateZones.Should().BeEmpty();
     }
 
     [Fact]
-    public void SetHeartRateZones_WithDuplicateZoneNumbers_ShouldThrow()
+    public void HeartRateZones_WithLactateThreshold_ShouldBeCalculated()
     {
         // Arrange
         var athlete = Athlete.Create("John Doe", new DateOnly(1990, 5, 15));
-        var zones = new[]
-        {
-            HeartRateZone.Create(1, "Recovery", 100, 120),
-            HeartRateZone.Create(1, "Also Recovery", 110, 130),
-        };
 
         // Act
-        var act = () => athlete.SetHeartRateZones(zones);
+        athlete.UpdatePhysiologicalData(185, 165, null);
 
         // Assert
-        act.Should().Throw<ArgumentException>().WithMessage("*Duplicate*");
+        athlete.HeartRateZones.Should().HaveCount(5);
+        athlete.HeartRateZones[0].Name.Should().Be("Recovery");
+        athlete.HeartRateZones[4].Name.Should().Be("VO2max");
     }
 
     [Fact]
-    public void SetPaceZones_WithValidZones_ShouldSetZones()
+    public void PaceZones_WithoutLactateThreshold_ShouldBeEmpty()
     {
         // Arrange
         var athlete = Athlete.Create("John Doe", new DateOnly(1990, 5, 15));
-        var zones = new[]
-        {
-            PaceZone.Create(1, "Easy", TimeSpan.FromMinutes(6), TimeSpan.FromMinutes(7)),
-            PaceZone.Create(2, "Tempo", TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(6)),
-        };
+
+        // Act & Assert
+        athlete.PaceZones.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void PaceZones_WithLactateThreshold_ShouldBeCalculated()
+    {
+        // Arrange
+        var athlete = Athlete.Create("John Doe", new DateOnly(1990, 5, 15));
 
         // Act
-        athlete.SetPaceZones(zones);
+        athlete.UpdatePhysiologicalData(null, null, TimeSpan.FromMinutes(5));
 
         // Assert
-        athlete.PaceZones.Should().HaveCount(2);
+        athlete.PaceZones.Should().HaveCount(5);
+        athlete.PaceZones[0].Name.Should().Be("Recovery");
+        athlete.PaceZones[4].Name.Should().Be("VO2max");
+    }
+
+    [Fact]
+    public void Zones_ShouldRecalculateWhenPhysiologicalDataChanges()
+    {
+        // Arrange
+        var athlete = Athlete.Create("John Doe", new DateOnly(1990, 5, 15));
+        athlete.UpdatePhysiologicalData(185, 160, TimeSpan.FromMinutes(5));
+        var originalZone1MaxBpm = athlete.HeartRateZones[0].MaxBpm;
+
+        // Act
+        athlete.UpdatePhysiologicalData(185, 170, TimeSpan.FromMinutes(5));
+
+        // Assert
+        athlete.HeartRateZones[0].MaxBpm.Should().NotBe(originalZone1MaxBpm);
     }
 }
