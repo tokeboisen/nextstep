@@ -4,9 +4,9 @@
 
 ### NFR-AUTH-001: Single User Authentication
 - Applikationen har én fast bruger
-- Login credentials:
-  - Email: `toke@loenbro.dk`
-  - Password: `QalwgC10#`
+- Login credentials konfigureres via environment variables:
+  - `Auth__Email`
+  - `Auth__Password`
 - Simple username/password authentication
 - JWT tokens for session management
 

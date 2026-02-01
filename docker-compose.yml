@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./src
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=nextstep;User=nextstep;Password=${MYSQL_PASSWORD};
+      - Jwt__Secret=${JWT_SECRET}
+      - Auth__Email=${AUTH_EMAIL}
+      - Auth__Password=${AUTH_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - nextstep-network
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=nextstep
+      - MYSQL_USER=nextstep
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nextstep-network
+
+networks:
+  nextstep-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
