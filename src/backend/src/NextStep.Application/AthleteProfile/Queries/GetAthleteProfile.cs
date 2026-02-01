@@ -37,6 +37,15 @@ public class GetAthleteProfileQueryHandler : IRequestHandler<GetAthleteProfileQu
             new TrainingAccessDto(
                 athlete.TrainingAccess.HasTrackAccess
             ),
+            new TrainingAvailabilityDto(
+                athlete.TrainingAvailability.Monday.ToString(),
+                athlete.TrainingAvailability.Tuesday.ToString(),
+                athlete.TrainingAvailability.Wednesday.ToString(),
+                athlete.TrainingAvailability.Thursday.ToString(),
+                athlete.TrainingAvailability.Friday.ToString(),
+                athlete.TrainingAvailability.Saturday.ToString(),
+                athlete.TrainingAvailability.Sunday.ToString()
+            ),
             athlete.HeartRateZones.Select(z => new HeartRateZoneDto(
                 z.ZoneNumber,
                 z.Name,

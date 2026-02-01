@@ -8,6 +8,7 @@ public class Athlete : Entity<Guid>
     public PersonalInfo PersonalInfo { get; private set; } = null!;
     public PhysiologicalData PhysiologicalData { get; private set; } = null!;
     public TrainingAccess TrainingAccess { get; private set; } = null!;
+    public TrainingAvailability TrainingAvailability { get; private set; } = null!;
 
     public IReadOnlyList<HeartRateZone> HeartRateZones => CalculateHeartRateZones();
     public IReadOnlyList<PaceZone> PaceZones => CalculatePaceZones();
@@ -19,6 +20,7 @@ public class Athlete : Entity<Guid>
         PersonalInfo = personalInfo;
         PhysiologicalData = PhysiologicalData.Empty();
         TrainingAccess = TrainingAccess.Default();
+        TrainingAvailability = TrainingAvailability.Default();
     }
 
     public static Athlete Create(string name, DateOnly birthDate)
@@ -46,6 +48,19 @@ public class Athlete : Entity<Guid>
     public void UpdateTrainingAccess(bool hasTrackAccess)
     {
         TrainingAccess = TrainingAccess.Create(hasTrackAccess);
+    }
+
+    public void UpdateTrainingAvailability(
+        WorkoutType monday,
+        WorkoutType tuesday,
+        WorkoutType wednesday,
+        WorkoutType thursday,
+        WorkoutType friday,
+        WorkoutType saturday,
+        WorkoutType sunday)
+    {
+        TrainingAvailability = TrainingAvailability.Create(
+            monday, tuesday, wednesday, thursday, friday, saturday, sunday);
     }
 
     private IReadOnlyList<HeartRateZone> CalculateHeartRateZones()

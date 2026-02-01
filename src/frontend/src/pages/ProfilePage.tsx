@@ -6,6 +6,7 @@ import {
   useUpdatePersonalInfo,
   useUpdatePhysiologicalData,
   useUpdateTrainingAccess,
+  useUpdateTrainingAvailability,
 } from '../hooks/useAthlete';
 import {
   Box,
@@ -35,20 +36,46 @@ import {
   TableRow,
   Paper,
   Divider,
+  FormControl,
+  Select,
+  MenuItem,
+  Chip,
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
 import SpeedIcon from '@mui/icons-material/Speed';
 import TimerIcon from '@mui/icons-material/Timer';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import LogoutIcon from '@mui/icons-material/Logout';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from '@mui/icons-material/Close';
+import { WORKOUT_TYPES, type WorkoutType } from '../types/athlete';
 
 const DRAWER_WIDTH = 280;
 
-type SectionId = 'personal' | 'physiological' | 'training' | 'heartRateZones' | 'paceZones';
+type SectionId = 'personal' | 'physiological' | 'training' | 'availability' | 'heartRateZones' | 'paceZones';
+
+const DAYS_OF_WEEK = [
+  { key: 'monday' as const, label: 'Monday' },
+  { key: 'tuesday' as const, label: 'Tuesday' },
+  { key: 'wednesday' as const, label: 'Wednesday' },
+  { key: 'thursday' as const, label: 'Thursday' },
+  { key: 'friday' as const, label: 'Friday' },
+  { key: 'saturday' as const, label: 'Saturday' },
+  { key: 'sunday' as const, label: 'Sunday' },
+];
+
+const WORKOUT_TYPE_TO_NUMBER: Record<WorkoutType, number> = {
+  'Rest': 0,
+  'CrossHIIT': 1,
+  'Recovery': 2,
+  'EasyRun': 3,
+  'Speed': 4,
+  'TempoRun': 5,
+  'LongRun': 6,
+};
 
 export function ProfilePage() {
   const { logout } = useAuth();
@@ -79,6 +106,7 @@ export function ProfilePage() {
     { id: 'personal' as const, label: 'Personal Info', icon: <PersonIcon /> },
     { id: 'physiological' as const, label: 'Physiological Data', icon: <FavoriteIcon /> },
     { id: 'training' as const, label: 'Training Access', icon: <DirectionsRunIcon /> },
+    { id: 'availability' as const, label: 'Weekly Schedule', icon: <CalendarMonthIcon /> },
     { id: 'heartRateZones' as const, label: 'Heart Rate Zones', icon: <SpeedIcon /> },
     { id: 'paceZones' as const, label: 'Pace Zones', icon: <TimerIcon /> },
   ];
@@ -160,6 +188,7 @@ export function ProfilePage() {
           {activeSection === 'personal' && <PersonalInfoSection athlete={athlete} />}
           {activeSection === 'physiological' && <PhysiologicalDataSection athlete={athlete} />}
           {activeSection === 'training' && <TrainingAccessSection athlete={athlete} />}
+          {activeSection === 'availability' && <TrainingAvailabilitySection athlete={athlete} />}
           {activeSection === 'heartRateZones' && <HeartRateZonesSection athlete={athlete} />}
           {activeSection === 'paceZones' && <PaceZonesSection athlete={athlete} />}
         </Box>
@@ -435,6 +464,175 @@ function TrainingAccessSection({ athlete }: { athlete: NonNullable<ReturnType<ty
             disabled={updateTrainingAccess.isPending}
           />
         </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TrainingAvailabilitySection({ athlete }: { athlete: NonNullable<ReturnType<typeof useAthlete>['data']> }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [schedule, setSchedule] = useState({
+    monday: athlete.trainingAvailability.monday,
+    tuesday: athlete.trainingAvailability.tuesday,
+    wednesday: athlete.trainingAvailability.wednesday,
+    thursday: athlete.trainingAvailability.thursday,
+    friday: athlete.trainingAvailability.friday,
+    saturday: athlete.trainingAvailability.saturday,
+    sunday: athlete.trainingAvailability.sunday,
+  });
+  const [error, setError] = useState<string | null>(null);
+  const updateTrainingAvailability = useUpdateTrainingAvailability();
+
+  const handleChange = (day: keyof typeof schedule, value: WorkoutType) => {
+    setSchedule(prev => ({ ...prev, [day]: value }));
+    setError(null);
+  };
+
+  const handleSave = () => {
+    setError(null);
+    updateTrainingAvailability.mutate({
+      monday: WORKOUT_TYPE_TO_NUMBER[schedule.monday],
+      tuesday: WORKOUT_TYPE_TO_NUMBER[schedule.tuesday],
+      wednesday: WORKOUT_TYPE_TO_NUMBER[schedule.wednesday],
+      thursday: WORKOUT_TYPE_TO_NUMBER[schedule.thursday],
+      friday: WORKOUT_TYPE_TO_NUMBER[schedule.friday],
+      saturday: WORKOUT_TYPE_TO_NUMBER[schedule.saturday],
+      sunday: WORKOUT_TYPE_TO_NUMBER[schedule.sunday],
+    }, {
+      onSuccess: () => setIsEditing(false),
+      onError: (err: unknown) => {
+        const errorMessage = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+          || 'Failed to save schedule';
+        setError(errorMessage);
+      },
+    });
+  };
+
+  const handleCancel = () => {
+    setSchedule({
+      monday: athlete.trainingAvailability.monday,
+      tuesday: athlete.trainingAvailability.tuesday,
+      wednesday: athlete.trainingAvailability.wednesday,
+      thursday: athlete.trainingAvailability.thursday,
+      friday: athlete.trainingAvailability.friday,
+      saturday: athlete.trainingAvailability.saturday,
+      sunday: athlete.trainingAvailability.sunday,
+    });
+    setError(null);
+    setIsEditing(false);
+  };
+
+  const getWorkoutTypeInfo = (type: WorkoutType) => {
+    return WORKOUT_TYPES.find(wt => wt.value === type) || WORKOUT_TYPES[0];
+  };
+
+  return (
+    <Card sx={{ maxWidth: 700 }}>
+      <CardHeader
+        title="Weekly Training Schedule"
+        subheader="Plan your training for each day of the week. Quality workouts cannot be scheduled on consecutive days."
+        action={
+          !isEditing && (
+            <IconButton onClick={() => setIsEditing(true)}>
+              <EditIcon />
+            </IconButton>
+          )
+        }
+      />
+      <CardContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        {isEditing ? (
+          <Box>
+            <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Day</TableCell>
+                    <TableCell>Workout Type</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {DAYS_OF_WEEK.map((day) => (
+                    <TableRow key={day.key}>
+                      <TableCell sx={{ fontWeight: 500 }}>{day.label}</TableCell>
+                      <TableCell>
+                        <FormControl fullWidth size="small">
+                          <Select
+                            value={schedule[day.key]}
+                            onChange={(e) => handleChange(day.key, e.target.value as WorkoutType)}
+                          >
+                            {WORKOUT_TYPES.map((wt) => (
+                              <MenuItem key={wt.value} value={wt.value}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  {wt.label}
+                                  {wt.isQuality && (
+                                    <Chip label="Quality" size="small" color="primary" sx={{ height: 20 }} />
+                                  )}
+                                </Box>
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="contained"
+                startIcon={<SaveIcon />}
+                onClick={handleSave}
+                disabled={updateTrainingAvailability.isPending}
+              >
+                Save
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<CloseIcon />}
+                onClick={handleCancel}
+              >
+                Cancel
+              </Button>
+            </Box>
+          </Box>
+        ) : (
+          <TableContainer component={Paper} variant="outlined">
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Day</TableCell>
+                  <TableCell>Workout Type</TableCell>
+                  <TableCell>Category</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {DAYS_OF_WEEK.map((day) => {
+                  const workoutInfo = getWorkoutTypeInfo(athlete.trainingAvailability[day.key]);
+                  return (
+                    <TableRow key={day.key}>
+                      <TableCell sx={{ fontWeight: 500 }}>{day.label}</TableCell>
+                      <TableCell>{workoutInfo.label}</TableCell>
+                      <TableCell>
+                        {workoutInfo.isQuality ? (
+                          <Chip label="Quality" size="small" color="primary" />
+                        ) : (
+                          <Chip label="Easy" size="small" color="default" variant="outlined" />
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </CardContent>
     </Card>
   );

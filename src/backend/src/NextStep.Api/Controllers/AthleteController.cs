@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using NextStep.Application.AthleteProfile.Commands;
 using NextStep.Application.AthleteProfile.DTOs;
 using NextStep.Application.AthleteProfile.Queries;
+using NextStep.Domain.AthleteProfile.ValueObjects;
 
 namespace NextStep.Api.Controllers;
 
@@ -61,9 +62,39 @@ public class AthleteController : ControllerBase
         await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
+
+    [HttpPut("training-availability")]
+    public async Task<ActionResult> UpdateTrainingAvailability([FromBody] UpdateTrainingAvailabilityRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var command = new UpdateTrainingAvailabilityCommand(
+                request.Monday,
+                request.Tuesday,
+                request.Wednesday,
+                request.Thursday,
+                request.Friday,
+                request.Saturday,
+                request.Sunday);
+            await _mediator.Send(command, cancellationToken);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }
 
 public record CreateAthleteRequest(string Name, DateOnly BirthDate);
 public record UpdatePersonalInfoRequest(string Name, DateOnly BirthDate);
 public record UpdatePhysiologicalDataRequest(int? MaxHeartRate, int? LactateThresholdHeartRate, string? LactateThresholdPace);
 public record UpdateTrainingAccessRequest(bool HasTrackAccess);
+public record UpdateTrainingAvailabilityRequest(
+    WorkoutType Monday,
+    WorkoutType Tuesday,
+    WorkoutType Wednesday,
+    WorkoutType Thursday,
+    WorkoutType Friday,
+    WorkoutType Saturday,
+    WorkoutType Sunday);

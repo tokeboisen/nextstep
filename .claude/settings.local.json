@@ -25,7 +25,10 @@
       "Bash(dotnet ef migrations add:*)",
       "Bash(dotnet tool install:*)",
       "Bash(docker-compose build:*)",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "Bash(docker compose build:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker logs:*)"
     ]
   }
 }

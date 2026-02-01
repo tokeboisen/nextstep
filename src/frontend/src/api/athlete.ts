@@ -5,6 +5,7 @@ import type {
   UpdatePersonalInfoRequest,
   UpdatePhysiologicalDataRequest,
   UpdateTrainingAccessRequest,
+  UpdateTrainingAvailabilityRequest,
 } from '../types/athlete';
 
 export const athleteApi = {
@@ -35,5 +36,9 @@ export const athleteApi = {
 
   updateTrainingAccess: async (request: UpdateTrainingAccessRequest): Promise<void> => {
     await apiClient.put('/athlete/training-access', request);
+  },
+
+  updateTrainingAvailability: async (request: UpdateTrainingAvailabilityRequest): Promise<void> => {
+    await apiClient.put('/athlete/training-availability', request);
   },
 };
