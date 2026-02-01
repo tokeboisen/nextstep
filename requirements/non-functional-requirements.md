@@ -89,3 +89,32 @@ Docker Desktop
 - RESTful endpoints
 - Consistent error handling
 - API versioning (når relevant)
+
+---
+
+## UI and UX
+
+### NFR-UX-001: Design System
+- Google Material Design (MUI - Material UI for React)
+- Consistent typography, spacing, and color palette
+- Responsive design for desktop and mobile
+
+### NFR-UX-002: Login Page Layout
+- Split-screen layout
+- Billede/illustration fylder venstre halvdel af skærmen
+- Login form i højre side med centreret indhold
+- Clean, minimalistisk design
+
+### NFR-UX-003: Profile Page Layout
+- Sidebar navigation i venstre side
+- Profile sektioner organiseret vertikalt i sidebar
+- Hovedindhold vises i center/højre område
+- Logisk gruppering af relaterede data
+
+### NFR-UX-004: Component Guidelines
+- Brug Material UI komponenter konsekvent
+- Floating labels på input felter
+- Outlined input style
+- Contained buttons til primære handlinger
+- Text buttons til sekundære handlinger
+- Cards med elevation til sektioner
