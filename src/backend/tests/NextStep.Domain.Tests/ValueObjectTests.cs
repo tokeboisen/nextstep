@@ -245,3 +245,147 @@ public class TrainingAccessTests
         access.HasTrackAccess.Should().BeFalse();
     }
 }
+
+public class WorkoutTypeTests
+{
+    [Theory]
+    [InlineData(WorkoutType.CrossHIIT, true)]
+    [InlineData(WorkoutType.Speed, true)]
+    [InlineData(WorkoutType.TempoRun, true)]
+    [InlineData(WorkoutType.LongRun, true)]
+    [InlineData(WorkoutType.Rest, false)]
+    [InlineData(WorkoutType.Recovery, false)]
+    [InlineData(WorkoutType.EasyRun, false)]
+    public void IsQualityWorkout_ShouldReturnCorrectValue(WorkoutType workoutType, bool expected)
+    {
+        // Act & Assert
+        workoutType.IsQualityWorkout().Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(WorkoutType.Rest, true)]
+    [InlineData(WorkoutType.Recovery, true)]
+    [InlineData(WorkoutType.EasyRun, true)]
+    [InlineData(WorkoutType.CrossHIIT, false)]
+    [InlineData(WorkoutType.Speed, false)]
+    [InlineData(WorkoutType.TempoRun, false)]
+    [InlineData(WorkoutType.LongRun, false)]
+    public void IsEasyWorkout_ShouldReturnCorrectValue(WorkoutType workoutType, bool expected)
+    {
+        // Act & Assert
+        workoutType.IsEasyWorkout().Should().Be(expected);
+    }
+}
+
+public class TrainingAvailabilityTests
+{
+    [Fact]
+    public void Create_WithValidSchedule_ShouldCreate()
+    {
+        // Arrange & Act
+        var availability = TrainingAvailability.Create(
+            WorkoutType.Speed,
+            WorkoutType.Recovery,
+            WorkoutType.TempoRun,
+            WorkoutType.EasyRun,
+            WorkoutType.LongRun,
+            WorkoutType.Rest,
+            WorkoutType.Rest);
+
+        // Assert
+        availability.Monday.Should().Be(WorkoutType.Speed);
+        availability.Tuesday.Should().Be(WorkoutType.Recovery);
+        availability.Wednesday.Should().Be(WorkoutType.TempoRun);
+        availability.Thursday.Should().Be(WorkoutType.EasyRun);
+        availability.Friday.Should().Be(WorkoutType.LongRun);
+        availability.Saturday.Should().Be(WorkoutType.Rest);
+        availability.Sunday.Should().Be(WorkoutType.Rest);
+    }
+
+    [Fact]
+    public void Create_WithConsecutiveQualityWorkouts_ShouldThrow()
+    {
+        // Arrange & Act
+        var act = () => TrainingAvailability.Create(
+            WorkoutType.Speed,      // Monday - quality
+            WorkoutType.TempoRun,   // Tuesday - quality (consecutive!)
+            WorkoutType.Rest,
+            WorkoutType.Rest,
+            WorkoutType.Rest,
+            WorkoutType.Rest,
+            WorkoutType.Rest);
+
+        // Assert
+        act.Should().Throw<ArgumentException>().WithMessage("*consecutive*Monday*Tuesday*");
+    }
+
+    [Fact]
+    public void Create_WithConsecutiveQualityWorkouts_SundayToMonday_ShouldThrow()
+    {
+        // Arrange & Act - Sunday wraps to Monday
+        var act = () => TrainingAvailability.Create(
+            WorkoutType.Speed,      // Monday - quality
+            WorkoutType.Rest,
+            WorkoutType.Rest,
+            WorkoutType.Rest,
+            WorkoutType.Rest,
+            WorkoutType.Rest,
+            WorkoutType.LongRun);   // Sunday - quality (consecutive with Monday!)
+
+        // Assert
+        act.Should().Throw<ArgumentException>().WithMessage("*consecutive*Sunday*Monday*");
+    }
+
+    [Fact]
+    public void Create_WithAlternatingQualityAndEasy_ShouldSucceed()
+    {
+        // Arrange & Act
+        var availability = TrainingAvailability.Create(
+            WorkoutType.Speed,
+            WorkoutType.Recovery,
+            WorkoutType.TempoRun,
+            WorkoutType.EasyRun,
+            WorkoutType.LongRun,
+            WorkoutType.Recovery,
+            WorkoutType.Rest);
+
+        // Assert
+        availability.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Default_ShouldReturnAllRest()
+    {
+        // Arrange & Act
+        var availability = TrainingAvailability.Default();
+
+        // Assert
+        availability.Monday.Should().Be(WorkoutType.Rest);
+        availability.Tuesday.Should().Be(WorkoutType.Rest);
+        availability.Wednesday.Should().Be(WorkoutType.Rest);
+        availability.Thursday.Should().Be(WorkoutType.Rest);
+        availability.Friday.Should().Be(WorkoutType.Rest);
+        availability.Saturday.Should().Be(WorkoutType.Rest);
+        availability.Sunday.Should().Be(WorkoutType.Rest);
+    }
+
+    [Fact]
+    public void GetWorkoutForDay_ShouldReturnCorrectWorkout()
+    {
+        // Arrange
+        var availability = TrainingAvailability.Create(
+            WorkoutType.Speed,
+            WorkoutType.Recovery,
+            WorkoutType.TempoRun,
+            WorkoutType.EasyRun,
+            WorkoutType.LongRun,
+            WorkoutType.Recovery,
+            WorkoutType.Rest);
+
+        // Act & Assert
+        availability.GetWorkoutForDay(DayOfWeek.Monday).Should().Be(WorkoutType.Speed);
+        availability.GetWorkoutForDay(DayOfWeek.Wednesday).Should().Be(WorkoutType.TempoRun);
+        availability.GetWorkoutForDay(DayOfWeek.Friday).Should().Be(WorkoutType.LongRun);
+        availability.GetWorkoutForDay(DayOfWeek.Sunday).Should().Be(WorkoutType.Rest);
+    }
+}

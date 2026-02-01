@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using NextStep.Domain.AthleteProfile.Entities;
+using NextStep.Domain.AthleteProfile.ValueObjects;
 
 namespace NextStep.Infrastructure.Persistence.Configurations;
 
@@ -41,6 +42,37 @@ public class AthleteConfiguration : IEntityTypeConfiguration<Athlete>
             ta.Property(t => t.HasTrackAccess)
                 .HasColumnName("HasTrackAccess")
                 .HasDefaultValue(false);
+        });
+
+        builder.OwnsOne(a => a.TrainingAvailability, av =>
+        {
+            av.Property(a => a.Monday)
+                .HasColumnName("AvailabilityMonday")
+                .HasDefaultValue(WorkoutType.Rest);
+
+            av.Property(a => a.Tuesday)
+                .HasColumnName("AvailabilityTuesday")
+                .HasDefaultValue(WorkoutType.Rest);
+
+            av.Property(a => a.Wednesday)
+                .HasColumnName("AvailabilityWednesday")
+                .HasDefaultValue(WorkoutType.Rest);
+
+            av.Property(a => a.Thursday)
+                .HasColumnName("AvailabilityThursday")
+                .HasDefaultValue(WorkoutType.Rest);
+
+            av.Property(a => a.Friday)
+                .HasColumnName("AvailabilityFriday")
+                .HasDefaultValue(WorkoutType.Rest);
+
+            av.Property(a => a.Saturday)
+                .HasColumnName("AvailabilitySaturday")
+                .HasDefaultValue(WorkoutType.Rest);
+
+            av.Property(a => a.Sunday)
+                .HasColumnName("AvailabilitySunday")
+                .HasDefaultValue(WorkoutType.Rest);
         });
 
         // HeartRateZones and PaceZones are calculated dynamically from LactateThreshold values

@@ -5,6 +5,7 @@ public record AthleteDto(
     PersonalInfoDto PersonalInfo,
     PhysiologicalDataDto PhysiologicalData,
     TrainingAccessDto TrainingAccess,
+    TrainingAvailabilityDto TrainingAvailability,
     List<HeartRateZoneDto> HeartRateZones,
     List<PaceZoneDto> PaceZones
 );
@@ -37,4 +38,14 @@ public record PaceZoneDto(
     string Name,
     string MinPace,
     string MaxPace
+);
+
+public record TrainingAvailabilityDto(
+    string Monday,
+    string Tuesday,
+    string Wednesday,
+    string Thursday,
+    string Friday,
+    string Saturday,
+    string Sunday
 );

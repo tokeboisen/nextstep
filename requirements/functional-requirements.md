@@ -30,6 +30,32 @@ Formål: Håndtering af løberens profil og fysiologiske data, som er relevante 
   - PaceZones (liste af zones med min/max pace) - beregnes fra LactateThresholdPace
 - TrainingAccess
   - HasTrackAccess (boolean) - adgang til løbebane
+- TrainingAvailability
+  - WeeklySchedule (dictionary: DayOfWeek -> WorkoutType)
+  - Angiver hvilken type træning der er planlagt for hver dag i ugen
+
+#### Workout Types
+
+Definerede træningstyper som kan vælges for hver dag:
+- **Rest** - Hviledag (ingen træning)
+- **CrossHIIT** - Cross training / HIIT (quality workout)
+- **Recovery** - Restitutionsløb (easy workout)
+- **EasyRun** - Let løb (easy workout)
+- **Speed** - Intervalløb / fart (quality workout)
+- **TempoRun** - Tempoløb / threshold (quality workout)
+- **LongRun** - Langtur (quality workout)
+
+**Kategorisering:**
+- Quality workouts: CrossHIIT, Speed, TempoRun, LongRun
+- Easy workouts: Recovery, EasyRun, Rest
+
+#### Training Availability Validation
+
+**Regel: Ingen to quality workouts i træk**
+- Det er ikke tilladt at have quality workouts på to sammenhængende dage
+- Eksempel: Speed på mandag og TempoRun på tirsdag er IKKE tilladt
+- Eksempel: Speed på mandag og EasyRun på tirsdag er tilladt
+- Ugen wrapper rundt: Søndag -> Mandag tæller som sammenhængende dage
 
 #### Zone Calculation
 
@@ -65,6 +91,11 @@ Zonerne beregnes automatisk baseret på laktattærsklen og kan ikke redigeres ma
 
 **UC-AP-004: Update Training Access**
 - Som løber vil jeg kunne angive om jeg har adgang til løbebane
+
+**UC-AP-005: Update Training Availability**
+- Som løber vil jeg kunne angive hvilken type træning jeg ønsker at lave hver dag i ugen
+- Systemet validerer at der ikke er to quality workouts på sammenhængende dage
+- Hvis valideringen fejler, vises en fejlmeddelelse og ændringen afvises
 
 ---
 

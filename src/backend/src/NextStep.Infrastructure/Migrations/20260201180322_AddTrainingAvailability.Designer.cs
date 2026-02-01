@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NextStep.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using NextStep.Infrastructure.Persistence;
 namespace NextStep.Infrastructure.Migrations
 {
     [DbContext(typeof(NextStepDbContext))]
-    partial class NextStepDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260201180322_AddTrainingAvailability")]
+    partial class AddTrainingAvailability
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
