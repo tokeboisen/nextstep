@@ -73,15 +73,33 @@ public class UpdatePhysiologicalDataCommandHandlerTests
         _athleteRepository.GetSingleAthleteAsync(Arg.Any<CancellationToken>())
             .Returns(athlete);
 
-        var command = new UpdatePhysiologicalDataCommand(185, 165);
+        var command = new UpdatePhysiologicalDataCommand(185, 165, "4:30");
 
         // Act
         await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         athlete.PhysiologicalData.MaxHeartRate.Should().Be(185);
-        athlete.PhysiologicalData.LactateThreshold.Should().Be(165);
+        athlete.PhysiologicalData.LactateThresholdHeartRate.Should().Be(165);
+        athlete.PhysiologicalData.LactateThresholdPace.Should().Be(new TimeSpan(0, 4, 30));
         await _athleteRepository.Received(1).UpdateAsync(athlete, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WithNullPace_ShouldSetNullPace()
+    {
+        // Arrange
+        var athlete = Athlete.Create("Name", new DateOnly(1990, 1, 1));
+        _athleteRepository.GetSingleAthleteAsync(Arg.Any<CancellationToken>())
+            .Returns(athlete);
+
+        var command = new UpdatePhysiologicalDataCommand(185, 165, null);
+
+        // Act
+        await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        athlete.PhysiologicalData.LactateThresholdPace.Should().BeNull();
     }
 }
 

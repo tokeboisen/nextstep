@@ -5,8 +5,6 @@ import type {
   UpdatePersonalInfoRequest,
   UpdatePhysiologicalDataRequest,
   UpdateTrainingAccessRequest,
-  UpdateHeartRateZonesRequest,
-  UpdatePaceZonesRequest,
 } from '../types/athlete';
 
 export function useAthlete() {
@@ -54,28 +52,6 @@ export function useUpdateTrainingAccess() {
 
   return useMutation({
     mutationFn: (request: UpdateTrainingAccessRequest) => athleteApi.updateTrainingAccess(request),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['athlete'] });
-    },
-  });
-}
-
-export function useUpdateHeartRateZones() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (request: UpdateHeartRateZonesRequest) => athleteApi.updateHeartRateZones(request),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['athlete'] });
-    },
-  });
-}
-
-export function useUpdatePaceZones() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (request: UpdatePaceZonesRequest) => athleteApi.updatePaceZones(request),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['athlete'] });
     },

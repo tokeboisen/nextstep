@@ -49,7 +49,7 @@ public class AthleteController : ControllerBase
     [HttpPut("physiological-data")]
     public async Task<ActionResult> UpdatePhysiologicalData([FromBody] UpdatePhysiologicalDataRequest request, CancellationToken cancellationToken)
     {
-        var command = new UpdatePhysiologicalDataCommand(request.MaxHeartRate, request.LactateThreshold);
+        var command = new UpdatePhysiologicalDataCommand(request.MaxHeartRate, request.LactateThresholdHeartRate, request.LactateThresholdPace);
         await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
@@ -61,31 +61,9 @@ public class AthleteController : ControllerBase
         await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
-
-    [HttpPut("heart-rate-zones")]
-    public async Task<ActionResult> UpdateHeartRateZones([FromBody] UpdateHeartRateZonesRequest request, CancellationToken cancellationToken)
-    {
-        var zones = request.Zones.Select(z => new HeartRateZoneInput(z.ZoneNumber, z.Name, z.MinBpm, z.MaxBpm)).ToList();
-        var command = new UpdateHeartRateZonesCommand(zones);
-        await _mediator.Send(command, cancellationToken);
-        return NoContent();
-    }
-
-    [HttpPut("pace-zones")]
-    public async Task<ActionResult> UpdatePaceZones([FromBody] UpdatePaceZonesRequest request, CancellationToken cancellationToken)
-    {
-        var zones = request.Zones.Select(z => new PaceZoneInput(z.ZoneNumber, z.Name, z.MinPace, z.MaxPace)).ToList();
-        var command = new UpdatePaceZonesCommand(zones);
-        await _mediator.Send(command, cancellationToken);
-        return NoContent();
-    }
 }
 
 public record CreateAthleteRequest(string Name, DateOnly BirthDate);
 public record UpdatePersonalInfoRequest(string Name, DateOnly BirthDate);
-public record UpdatePhysiologicalDataRequest(int? MaxHeartRate, int? LactateThreshold);
+public record UpdatePhysiologicalDataRequest(int? MaxHeartRate, int? LactateThresholdHeartRate, string? LactateThresholdPace);
 public record UpdateTrainingAccessRequest(bool HasTrackAccess);
-public record UpdateHeartRateZonesRequest(List<HeartRateZoneRequest> Zones);
-public record HeartRateZoneRequest(int ZoneNumber, string Name, int MinBpm, int MaxBpm);
-public record UpdatePaceZonesRequest(List<PaceZoneRequest> Zones);
-public record PaceZoneRequest(int ZoneNumber, string Name, string MinPace, string MaxPace);

@@ -6,10 +6,7 @@ import {
   useUpdatePersonalInfo,
   useUpdatePhysiologicalData,
   useUpdateTrainingAccess,
-  useUpdateHeartRateZones,
-  useUpdatePaceZones,
 } from '../hooks/useAthlete';
-import type { HeartRateZone, PaceZone } from '../types/athlete';
 
 export function ProfilePage() {
   const { logout } = useAuth();
@@ -147,13 +144,15 @@ function PersonalInfoSection({ athlete }: { athlete: NonNullable<ReturnType<type
 function PhysiologicalDataSection({ athlete }: { athlete: NonNullable<ReturnType<typeof useAthlete>['data']> }) {
   const [isEditing, setIsEditing] = useState(false);
   const [maxHeartRate, setMaxHeartRate] = useState<string>(athlete.physiologicalData.maxHeartRate?.toString() || '');
-  const [lactateThreshold, setLactateThreshold] = useState<string>(athlete.physiologicalData.lactateThreshold?.toString() || '');
+  const [lactateThresholdHeartRate, setLactateThresholdHeartRate] = useState<string>(athlete.physiologicalData.lactateThresholdHeartRate?.toString() || '');
+  const [lactateThresholdPace, setLactateThresholdPace] = useState<string>(athlete.physiologicalData.lactateThresholdPace || '');
   const updatePhysiologicalData = useUpdatePhysiologicalData();
 
   const handleSave = () => {
     updatePhysiologicalData.mutate({
       maxHeartRate: maxHeartRate ? parseInt(maxHeartRate) : null,
-      lactateThreshold: lactateThreshold ? parseInt(lactateThreshold) : null,
+      lactateThresholdHeartRate: lactateThresholdHeartRate ? parseInt(lactateThresholdHeartRate) : null,
+      lactateThresholdPace: lactateThresholdPace || null,
     }, {
       onSuccess: () => setIsEditing(false),
     });
@@ -169,8 +168,17 @@ function PhysiologicalDataSection({ athlete }: { athlete: NonNullable<ReturnType
             <input type="number" value={maxHeartRate} onChange={(e) => setMaxHeartRate(e.target.value)} />
           </div>
           <div className="form-group">
-            <label>Lactate Threshold (bpm)</label>
-            <input type="number" value={lactateThreshold} onChange={(e) => setLactateThreshold(e.target.value)} />
+            <label>Lactate Threshold Heart Rate (bpm)</label>
+            <input type="number" value={lactateThresholdHeartRate} onChange={(e) => setLactateThresholdHeartRate(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Lactate Threshold Pace (mm:ss)</label>
+            <input
+              type="text"
+              value={lactateThresholdPace}
+              onChange={(e) => setLactateThresholdPace(e.target.value)}
+              placeholder="e.g. 4:30"
+            />
           </div>
           <div className="button-group">
             <button onClick={handleSave} disabled={updatePhysiologicalData.isPending}>Save</button>
@@ -182,8 +190,10 @@ function PhysiologicalDataSection({ athlete }: { athlete: NonNullable<ReturnType
           <dl>
             <dt>Max Heart Rate</dt>
             <dd>{athlete.physiologicalData.maxHeartRate ? `${athlete.physiologicalData.maxHeartRate} bpm` : 'Not set'}</dd>
-            <dt>Lactate Threshold</dt>
-            <dd>{athlete.physiologicalData.lactateThreshold ? `${athlete.physiologicalData.lactateThreshold} bpm` : 'Not set'}</dd>
+            <dt>Lactate Threshold Heart Rate</dt>
+            <dd>{athlete.physiologicalData.lactateThresholdHeartRate ? `${athlete.physiologicalData.lactateThresholdHeartRate} bpm` : 'Not set'}</dd>
+            <dt>Lactate Threshold Pace</dt>
+            <dd>{athlete.physiologicalData.lactateThresholdPace ? `${athlete.physiologicalData.lactateThresholdPace} min/km` : 'Not set'}</dd>
           </dl>
           <button onClick={() => setIsEditing(true)}>Edit</button>
         </>
@@ -219,181 +229,67 @@ function TrainingAccessSection({ athlete }: { athlete: NonNullable<ReturnType<ty
 }
 
 function HeartRateZonesSection({ athlete }: { athlete: NonNullable<ReturnType<typeof useAthlete>['data']> }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [zones, setZones] = useState<HeartRateZone[]>(athlete.heartRateZones.length > 0 ? athlete.heartRateZones : getDefaultHeartRateZones());
-  const updateHeartRateZones = useUpdateHeartRateZones();
-
-  const handleSave = () => {
-    updateHeartRateZones.mutate({ zones }, {
-      onSuccess: () => setIsEditing(false),
-    });
-  };
-
-  const updateZone = (index: number, field: keyof HeartRateZone, value: string | number) => {
-    const newZones = [...zones];
-    newZones[index] = { ...newZones[index], [field]: value };
-    setZones(newZones);
-  };
-
   return (
     <div className="card">
       <h2>Heart Rate Zones</h2>
-      {isEditing ? (
-        <>
-          <table className="zones-table">
-            <thead>
-              <tr>
-                <th>Zone</th>
-                <th>Name</th>
-                <th>Min BPM</th>
-                <th>Max BPM</th>
+      <p className="zone-info">Calculated automatically from Lactate Threshold Heart Rate</p>
+      {athlete.heartRateZones.length > 0 ? (
+        <table className="zones-table">
+          <thead>
+            <tr>
+              <th>Zone</th>
+              <th>Name</th>
+              <th>Min BPM</th>
+              <th>Max BPM</th>
+            </tr>
+          </thead>
+          <tbody>
+            {athlete.heartRateZones.map((zone) => (
+              <tr key={zone.zoneNumber}>
+                <td>{zone.zoneNumber}</td>
+                <td>{zone.name}</td>
+                <td>{zone.minBpm}</td>
+                <td>{zone.maxBpm}</td>
               </tr>
-            </thead>
-            <tbody>
-              {zones.map((zone, index) => (
-                <tr key={zone.zoneNumber}>
-                  <td>{zone.zoneNumber}</td>
-                  <td><input value={zone.name} onChange={(e) => updateZone(index, 'name', e.target.value)} /></td>
-                  <td><input type="number" value={zone.minBpm} onChange={(e) => updateZone(index, 'minBpm', parseInt(e.target.value))} /></td>
-                  <td><input type="number" value={zone.maxBpm} onChange={(e) => updateZone(index, 'maxBpm', parseInt(e.target.value))} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="button-group">
-            <button onClick={handleSave} disabled={updateHeartRateZones.isPending}>Save</button>
-            <button onClick={() => setIsEditing(false)} className="secondary">Cancel</button>
-          </div>
-        </>
+            ))}
+          </tbody>
+        </table>
       ) : (
-        <>
-          {athlete.heartRateZones.length > 0 ? (
-            <table className="zones-table">
-              <thead>
-                <tr>
-                  <th>Zone</th>
-                  <th>Name</th>
-                  <th>Min BPM</th>
-                  <th>Max BPM</th>
-                </tr>
-              </thead>
-              <tbody>
-                {athlete.heartRateZones.map((zone) => (
-                  <tr key={zone.zoneNumber}>
-                    <td>{zone.zoneNumber}</td>
-                    <td>{zone.name}</td>
-                    <td>{zone.minBpm}</td>
-                    <td>{zone.maxBpm}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>No heart rate zones defined</p>
-          )}
-          <button onClick={() => setIsEditing(true)}>Edit Zones</button>
-        </>
+        <p className="no-zones">Set your Lactate Threshold Heart Rate to calculate zones</p>
       )}
     </div>
   );
 }
 
 function PaceZonesSection({ athlete }: { athlete: NonNullable<ReturnType<typeof useAthlete>['data']> }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [zones, setZones] = useState<PaceZone[]>(athlete.paceZones.length > 0 ? athlete.paceZones : getDefaultPaceZones());
-  const updatePaceZones = useUpdatePaceZones();
-
-  const handleSave = () => {
-    updatePaceZones.mutate({ zones }, {
-      onSuccess: () => setIsEditing(false),
-    });
-  };
-
-  const updateZone = (index: number, field: keyof PaceZone, value: string | number) => {
-    const newZones = [...zones];
-    newZones[index] = { ...newZones[index], [field]: value };
-    setZones(newZones);
-  };
-
   return (
     <div className="card">
       <h2>Pace Zones</h2>
-      {isEditing ? (
-        <>
-          <table className="zones-table">
-            <thead>
-              <tr>
-                <th>Zone</th>
-                <th>Name</th>
-                <th>Min Pace</th>
-                <th>Max Pace</th>
+      <p className="zone-info">Calculated automatically from Lactate Threshold Pace</p>
+      {athlete.paceZones.length > 0 ? (
+        <table className="zones-table">
+          <thead>
+            <tr>
+              <th>Zone</th>
+              <th>Name</th>
+              <th>Min Pace</th>
+              <th>Max Pace</th>
+            </tr>
+          </thead>
+          <tbody>
+            {athlete.paceZones.map((zone) => (
+              <tr key={zone.zoneNumber}>
+                <td>{zone.zoneNumber}</td>
+                <td>{zone.name}</td>
+                <td>{zone.minPace}</td>
+                <td>{zone.maxPace}</td>
               </tr>
-            </thead>
-            <tbody>
-              {zones.map((zone, index) => (
-                <tr key={zone.zoneNumber}>
-                  <td>{zone.zoneNumber}</td>
-                  <td><input value={zone.name} onChange={(e) => updateZone(index, 'name', e.target.value)} /></td>
-                  <td><input value={zone.minPace} onChange={(e) => updateZone(index, 'minPace', e.target.value)} placeholder="mm:ss" /></td>
-                  <td><input value={zone.maxPace} onChange={(e) => updateZone(index, 'maxPace', e.target.value)} placeholder="mm:ss" /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="button-group">
-            <button onClick={handleSave} disabled={updatePaceZones.isPending}>Save</button>
-            <button onClick={() => setIsEditing(false)} className="secondary">Cancel</button>
-          </div>
-        </>
+            ))}
+          </tbody>
+        </table>
       ) : (
-        <>
-          {athlete.paceZones.length > 0 ? (
-            <table className="zones-table">
-              <thead>
-                <tr>
-                  <th>Zone</th>
-                  <th>Name</th>
-                  <th>Min Pace</th>
-                  <th>Max Pace</th>
-                </tr>
-              </thead>
-              <tbody>
-                {athlete.paceZones.map((zone) => (
-                  <tr key={zone.zoneNumber}>
-                    <td>{zone.zoneNumber}</td>
-                    <td>{zone.name}</td>
-                    <td>{zone.minPace}</td>
-                    <td>{zone.maxPace}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>No pace zones defined</p>
-          )}
-          <button onClick={() => setIsEditing(true)}>Edit Zones</button>
-        </>
+        <p className="no-zones">Set your Lactate Threshold Pace to calculate zones</p>
       )}
     </div>
   );
-}
-
-function getDefaultHeartRateZones(): HeartRateZone[] {
-  return [
-    { zoneNumber: 1, name: 'Recovery', minBpm: 100, maxBpm: 120 },
-    { zoneNumber: 2, name: 'Aerobic', minBpm: 120, maxBpm: 140 },
-    { zoneNumber: 3, name: 'Tempo', minBpm: 140, maxBpm: 160 },
-    { zoneNumber: 4, name: 'Threshold', minBpm: 160, maxBpm: 175 },
-    { zoneNumber: 5, name: 'VO2max', minBpm: 175, maxBpm: 190 },
-  ];
-}
-
-function getDefaultPaceZones(): PaceZone[] {
-  return [
-    { zoneNumber: 1, name: 'Recovery', minPace: '6:30', maxPace: '7:30' },
-    { zoneNumber: 2, name: 'Easy', minPace: '5:30', maxPace: '6:30' },
-    { zoneNumber: 3, name: 'Tempo', minPace: '5:00', maxPace: '5:30' },
-    { zoneNumber: 4, name: 'Threshold', minPace: '4:30', maxPace: '5:00' },
-    { zoneNumber: 5, name: 'Interval', minPace: '4:00', maxPace: '4:30' },
-  ];
 }

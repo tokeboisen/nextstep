@@ -15,7 +15,8 @@ export interface PersonalInfo {
 
 export interface PhysiologicalData {
   maxHeartRate: number | null;
-  lactateThreshold: number | null;
+  lactateThresholdHeartRate: number | null;
+  lactateThresholdPace: string | null;
 }
 
 export interface TrainingAccess {
@@ -48,17 +49,10 @@ export interface UpdatePersonalInfoRequest {
 
 export interface UpdatePhysiologicalDataRequest {
   maxHeartRate: number | null;
-  lactateThreshold: number | null;
+  lactateThresholdHeartRate: number | null;
+  lactateThresholdPace: string | null;
 }
 
 export interface UpdateTrainingAccessRequest {
   hasTrackAccess: boolean;
-}
-
-export interface UpdateHeartRateZonesRequest {
-  zones: HeartRateZone[];
-}
-
-export interface UpdatePaceZonesRequest {
-  zones: PaceZone[];
 }

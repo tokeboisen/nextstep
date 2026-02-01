@@ -17,7 +17,8 @@ public record PersonalInfoDto(
 
 public record PhysiologicalDataDto(
     int? MaxHeartRate,
-    int? LactateThreshold
+    int? LactateThresholdHeartRate,
+    string? LactateThresholdPace
 );
 
 public record TrainingAccessDto(
