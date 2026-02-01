@@ -2,17 +2,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build-backend
 WORKDIR /src
 
-# Copy csproj files and restore
-COPY backend/src/NextStep.Domain/*.csproj backend/src/NextStep.Domain/
-COPY backend/src/NextStep.Application/*.csproj backend/src/NextStep.Application/
-COPY backend/src/NextStep.Infrastructure/*.csproj backend/src/NextStep.Infrastructure/
-COPY backend/src/NextStep.Api/*.csproj backend/src/NextStep.Api/
-COPY backend/nuget.config backend/
-RUN dotnet restore backend/src/NextStep.Api/NextStep.Api.csproj --configfile backend/nuget.config
-
-# Copy source and build
-COPY backend/src/ backend/src/
-RUN dotnet publish backend/src/NextStep.Api/NextStep.Api.csproj -c Release -o /app/publish --no-restore
+# Copy everything and build
+COPY backend/ backend/
+RUN dotnet publish backend/src/NextStep.Api/NextStep.Api.csproj -c Release -o /app/publish
 
 # Build stage for React
 FROM node:20-alpine AS build-frontend
