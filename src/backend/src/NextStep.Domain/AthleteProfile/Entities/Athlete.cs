@@ -10,6 +10,9 @@ public class Athlete : Entity<Guid>
     public TrainingAccess TrainingAccess { get; private set; } = null!;
     public TrainingAvailability TrainingAvailability { get; private set; } = null!;
 
+    private readonly List<Goal> _goals = new();
+    public IReadOnlyList<Goal> Goals => _goals.AsReadOnly();
+
     public IReadOnlyList<HeartRateZone> HeartRateZones => CalculateHeartRateZones();
     public IReadOnlyList<PaceZone> PaceZones => CalculatePaceZones();
 
@@ -61,6 +64,46 @@ public class Athlete : Entity<Guid>
     {
         TrainingAvailability = TrainingAvailability.Create(
             monday, tuesday, wednesday, thursday, friday, saturday, sunday);
+    }
+
+    public Goal AddGoal(DateOnly raceDate, TimeSpan targetTime, GoalDistance distance)
+    {
+        var isPrimary = _goals.Count == 0;
+        var goal = Goal.Create(raceDate, targetTime, distance, isPrimary);
+        _goals.Add(goal);
+        return goal;
+    }
+
+    public void UpdateGoal(Guid goalId, DateOnly raceDate, TimeSpan targetTime, GoalDistance distance)
+    {
+        var goal = _goals.FirstOrDefault(g => g.Id == goalId)
+            ?? throw new InvalidOperationException($"Goal with id {goalId} not found");
+
+        goal.Update(raceDate, targetTime, distance);
+    }
+
+    public void DeleteGoal(Guid goalId)
+    {
+        var goal = _goals.FirstOrDefault(g => g.Id == goalId)
+            ?? throw new InvalidOperationException($"Goal with id {goalId} not found");
+
+        if (goal.IsPrimary && _goals.Count > 1)
+        {
+            throw new InvalidOperationException("Cannot delete primary goal when other goals exist. Set another goal as primary first.");
+        }
+
+        _goals.Remove(goal);
+    }
+
+    public void SetPrimaryGoal(Guid goalId)
+    {
+        var goal = _goals.FirstOrDefault(g => g.Id == goalId)
+            ?? throw new InvalidOperationException($"Goal with id {goalId} not found");
+
+        foreach (var g in _goals)
+        {
+            g.SetPrimary(g.Id == goalId);
+        }
     }
 
     private IReadOnlyList<HeartRateZone> CalculateHeartRateZones()

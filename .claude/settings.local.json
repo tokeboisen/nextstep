@@ -28,7 +28,9 @@
       "Bash(docker exec:*)",
       "Bash(docker compose build:*)",
       "Bash(docker compose:*)",
-      "Bash(docker logs:*)"
+      "Bash(docker logs:*)",
+      "Bash(git pull:*)",
+      "Bash(git branch:*)"
     ]
   }
 }

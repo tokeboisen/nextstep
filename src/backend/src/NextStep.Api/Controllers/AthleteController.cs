@@ -84,6 +84,79 @@ public class AthleteController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+
+    [HttpPost("goals")]
+    public async Task<ActionResult<Guid>> AddGoal([FromBody] AddGoalRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var command = new AddGoalCommand(
+                request.RaceDate,
+                request.TargetTime,
+                request.DistanceType,
+                request.CustomDistanceKm);
+            var goalId = await _mediator.Send(command, cancellationToken);
+            return CreatedAtAction(nameof(GetProfile), new { id = goalId }, goalId);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPut("goals/{goalId:guid}")]
+    public async Task<ActionResult> UpdateGoal(Guid goalId, [FromBody] UpdateGoalRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var command = new UpdateGoalCommand(
+                goalId,
+                request.RaceDate,
+                request.TargetTime,
+                request.DistanceType,
+                request.CustomDistanceKm);
+            await _mediator.Send(command, cancellationToken);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpDelete("goals/{goalId:guid}")]
+    public async Task<ActionResult> DeleteGoal(Guid goalId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var command = new DeleteGoalCommand(goalId);
+            await _mediator.Send(command, cancellationToken);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPut("goals/{goalId:guid}/primary")]
+    public async Task<ActionResult> SetPrimaryGoal(Guid goalId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var command = new SetPrimaryGoalCommand(goalId);
+            await _mediator.Send(command, cancellationToken);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
 }
 
 public record CreateAthleteRequest(string Name, DateOnly BirthDate);
@@ -98,3 +171,15 @@ public record UpdateTrainingAvailabilityRequest(
     WorkoutType Friday,
     WorkoutType Saturday,
     WorkoutType Sunday);
+
+public record AddGoalRequest(
+    DateOnly RaceDate,
+    TimeSpan TargetTime,
+    DistanceType DistanceType,
+    decimal? CustomDistanceKm);
+
+public record UpdateGoalRequest(
+    DateOnly RaceDate,
+    TimeSpan TargetTime,
+    DistanceType DistanceType,
+    decimal? CustomDistanceKm);

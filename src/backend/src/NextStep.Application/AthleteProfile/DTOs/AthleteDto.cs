@@ -7,7 +7,8 @@ public record AthleteDto(
     TrainingAccessDto TrainingAccess,
     TrainingAvailabilityDto TrainingAvailability,
     List<HeartRateZoneDto> HeartRateZones,
-    List<PaceZoneDto> PaceZones
+    List<PaceZoneDto> PaceZones,
+    List<GoalDto> Goals
 );
 
 public record PersonalInfoDto(
@@ -48,4 +49,14 @@ public record TrainingAvailabilityDto(
     string Friday,
     string Saturday,
     string Sunday
+);
+
+public record GoalDto(
+    Guid Id,
+    DateOnly RaceDate,
+    string TargetTime,
+    string DistanceType,
+    decimal? CustomDistanceKm,
+    string DistanceDisplay,
+    bool IsPrimary
 );

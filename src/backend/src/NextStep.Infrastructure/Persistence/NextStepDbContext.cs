@@ -6,6 +6,7 @@ namespace NextStep.Infrastructure.Persistence;
 public class NextStepDbContext : DbContext
 {
     public DbSet<Athlete> Athletes => Set<Athlete>();
+    public DbSet<Goal> Goals => Set<Goal>();
 
     public NextStepDbContext(DbContextOptions<NextStepDbContext> options) : base(options)
     {

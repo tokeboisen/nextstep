@@ -57,6 +57,15 @@ public class GetAthleteProfileQueryHandler : IRequestHandler<GetAthleteProfileQu
                 z.Name,
                 z.FormatMinPace(),
                 z.FormatMaxPace()
+            )).ToList(),
+            athlete.Goals.Select(g => new GoalDto(
+                g.Id,
+                g.RaceDate,
+                FormatTargetTime(g.TargetTime),
+                g.Distance.DistanceType.ToString(),
+                g.Distance.CustomDistanceKm,
+                g.Distance.GetDisplayName(),
+                g.IsPrimary
             )).ToList()
         );
     }
@@ -67,5 +76,14 @@ public class GetAthleteProfileQueryHandler : IRequestHandler<GetAthleteProfileQu
             return null;
 
         return $"{(int)pace.Value.TotalMinutes}:{pace.Value.Seconds:D2}";
+    }
+
+    private static string FormatTargetTime(TimeSpan time)
+    {
+        if (time.TotalHours >= 1)
+        {
+            return $"{(int)time.TotalHours}:{time.Minutes:D2}:{time.Seconds:D2}";
+        }
+        return $"{time.Minutes}:{time.Seconds:D2}";
     }
 }
