@@ -33,6 +33,9 @@ Formål: Håndtering af løberens profil og fysiologiske data, som er relevante 
 - TrainingAvailability
   - WeeklySchedule (dictionary: DayOfWeek -> WorkoutType)
   - Angiver hvilken type træning der er planlagt for hver dag i ugen
+- Goals (collection)
+  - En liste af løbemål for atleten
+  - Der skal altid være præcis ét primært mål (IsPrimary = true)
 
 #### Workout Types
 
@@ -48,6 +51,41 @@ Definerede træningstyper som kan vælges for hver dag:
 **Kategorisering:**
 - Quality workouts: CrossHIIT, Speed, TempoRun, LongRun
 - Easy workouts: Recovery, EasyRun, Rest
+
+#### Goal Entity
+
+**Goal**
+- Id (Guid) - unik identifikator
+- RaceDate (date, required) - dato for løbet/målet
+- TargetTime (TimeSpan, required) - måltid for løbet
+- Distance (GoalDistance, required) - distance for løbet
+- IsPrimary (boolean) - angiver om dette er det primære mål
+
+#### Goal Distance Types
+
+Prædefinerede distancer som kan vælges:
+- **Distance1600m** - 1600 meter (baneløb)
+- **Distance5K** - 5 kilometer
+- **Distance10K** - 10 kilometer
+- **Distance16K** - 16 kilometer
+- **HalfMarathon** - Halvmaraton (21.0975 km)
+- **Marathon** - Maraton (42.195 km)
+- **Custom** - Manuelt indtastet distance i kilometer
+
+**Struktur:**
+- DistanceType (enum) - type af distance
+- CustomDistanceKm (decimal?, nullable) - kun anvendt når DistanceType = Custom
+
+#### Goal Validation Rules
+
+1. **Præcis ét primært mål**: Der skal altid være præcis ét mål markeret som primært
+   - Når det første mål tilføjes, bliver det automatisk primært
+   - Når et mål sættes som primært, fjernes primær-status fra det tidligere primære mål
+   - Det primære mål kan ikke slettes medmindre der kun er ét mål tilbage
+
+2. **Custom distance**: Når DistanceType = Custom, skal CustomDistanceKm være udfyldt og > 0
+
+3. **RaceDate**: Skal være en gyldig dato (kan være i fortid eller fremtid)
 
 #### Training Availability Validation
 
@@ -96,6 +134,23 @@ Zonerne beregnes automatisk baseret på laktattærsklen og kan ikke redigeres ma
 - Som løber vil jeg kunne angive hvilken type træning jeg ønsker at lave hver dag i ugen
 - Systemet validerer at der ikke er to quality workouts på sammenhængende dage
 - Hvis valideringen fejler, vises en fejlmeddelelse og ændringen afvises
+
+**UC-AP-006: Add Goal**
+- Som løber vil jeg kunne tilføje et nyt løbemål med dato, måltid og distance
+- Hvis det er det første mål, bliver det automatisk primært
+- Jeg kan vælge mellem prædefinerede distancer eller indtaste en custom distance
+
+**UC-AP-007: Update Goal**
+- Som løber vil jeg kunne opdatere et eksisterende mål
+
+**UC-AP-008: Delete Goal**
+- Som løber vil jeg kunne slette et mål
+- Hvis målet er primært og der er andre mål, skal et andet mål først sættes som primært
+- Hvis det er det eneste mål, kan det slettes
+
+**UC-AP-009: Set Primary Goal**
+- Som løber vil jeg kunne markere et mål som mit primære mål
+- Det tidligere primære mål mister sin primær-status automatisk
 
 ---
 

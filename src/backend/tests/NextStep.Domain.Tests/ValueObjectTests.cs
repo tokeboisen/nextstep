@@ -389,3 +389,101 @@ public class TrainingAvailabilityTests
         availability.GetWorkoutForDay(DayOfWeek.Sunday).Should().Be(WorkoutType.Rest);
     }
 }
+
+public class GoalDistanceTests
+{
+    [Theory]
+    [InlineData(DistanceType.Distance1600m, 1.6)]
+    [InlineData(DistanceType.Distance5K, 5)]
+    [InlineData(DistanceType.Distance10K, 10)]
+    [InlineData(DistanceType.Distance16K, 16)]
+    [InlineData(DistanceType.HalfMarathon, 21.0975)]
+    [InlineData(DistanceType.Marathon, 42.195)]
+    public void GetDistanceInKm_ForPredefinedTypes_ShouldReturnCorrectDistance(DistanceType type, decimal expected)
+    {
+        // Arrange
+        var distance = GoalDistance.Create(type);
+
+        // Act & Assert
+        distance.GetDistanceInKm().Should().Be(expected);
+    }
+
+    [Fact]
+    public void Create_WithCustomDistance_ShouldSetCustomDistanceKm()
+    {
+        // Arrange & Act
+        var distance = GoalDistance.Create(DistanceType.Custom, 15.5m);
+
+        // Assert
+        distance.DistanceType.Should().Be(DistanceType.Custom);
+        distance.CustomDistanceKm.Should().Be(15.5m);
+        distance.GetDistanceInKm().Should().Be(15.5m);
+    }
+
+    [Fact]
+    public void Create_WithCustomType_WithoutDistance_ShouldThrow()
+    {
+        // Arrange & Act
+        var act = () => GoalDistance.Create(DistanceType.Custom, null);
+
+        // Assert
+        act.Should().Throw<ArgumentException>().WithMessage("*Custom distance*greater than 0*");
+    }
+
+    [Fact]
+    public void Create_WithCustomType_WithZeroDistance_ShouldThrow()
+    {
+        // Arrange & Act
+        var act = () => GoalDistance.Create(DistanceType.Custom, 0);
+
+        // Assert
+        act.Should().Throw<ArgumentException>().WithMessage("*Custom distance*greater than 0*");
+    }
+
+    [Fact]
+    public void Create_WithCustomType_WithNegativeDistance_ShouldThrow()
+    {
+        // Arrange & Act
+        var act = () => GoalDistance.Create(DistanceType.Custom, -5m);
+
+        // Assert
+        act.Should().Throw<ArgumentException>().WithMessage("*Custom distance*greater than 0*");
+    }
+
+    [Fact]
+    public void Create_WithNonCustomType_ShouldIgnoreCustomDistanceKm()
+    {
+        // Arrange & Act
+        var distance = GoalDistance.Create(DistanceType.Distance5K, 99m);
+
+        // Assert
+        distance.CustomDistanceKm.Should().BeNull();
+        distance.GetDistanceInKm().Should().Be(5m);
+    }
+
+    [Theory]
+    [InlineData(DistanceType.Distance1600m, "1600m")]
+    [InlineData(DistanceType.Distance5K, "5K")]
+    [InlineData(DistanceType.Distance10K, "10K")]
+    [InlineData(DistanceType.Distance16K, "16K")]
+    [InlineData(DistanceType.HalfMarathon, "Half Marathon")]
+    [InlineData(DistanceType.Marathon, "Marathon")]
+    public void GetDisplayName_ForPredefinedTypes_ShouldReturnCorrectName(DistanceType type, string expected)
+    {
+        // Arrange
+        var distance = GoalDistance.Create(type);
+
+        // Act & Assert
+        distance.GetDisplayName().Should().Be(expected);
+    }
+
+    [Fact]
+    public void GetDisplayName_ForCustomType_ShouldReturnDistanceWithKm()
+    {
+        // Arrange
+        var distance = GoalDistance.Create(DistanceType.Custom, 12.5m);
+
+        // Act & Assert
+        distance.GetDisplayName().Should().MatchRegex(@"12[.,]5 km");
+    }
+}

@@ -6,6 +6,8 @@ import type {
   UpdatePhysiologicalDataRequest,
   UpdateTrainingAccessRequest,
   UpdateTrainingAvailabilityRequest,
+  AddGoalRequest,
+  UpdateGoalRequest,
 } from '../types/athlete';
 
 export function useAthlete() {
@@ -64,6 +66,51 @@ export function useUpdateTrainingAvailability() {
 
   return useMutation({
     mutationFn: (request: UpdateTrainingAvailabilityRequest) => athleteApi.updateTrainingAvailability(request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['athlete'] });
+    },
+  });
+}
+
+export function useAddGoal() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: AddGoalRequest) => athleteApi.addGoal(request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['athlete'] });
+    },
+  });
+}
+
+export function useUpdateGoal() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ goalId, request }: { goalId: string; request: UpdateGoalRequest }) =>
+      athleteApi.updateGoal(goalId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['athlete'] });
+    },
+  });
+}
+
+export function useDeleteGoal() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (goalId: string) => athleteApi.deleteGoal(goalId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['athlete'] });
+    },
+  });
+}
+
+export function useSetPrimaryGoal() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (goalId: string) => athleteApi.setPrimaryGoal(goalId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['athlete'] });
     },

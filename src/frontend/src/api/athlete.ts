@@ -6,6 +6,8 @@ import type {
   UpdatePhysiologicalDataRequest,
   UpdateTrainingAccessRequest,
   UpdateTrainingAvailabilityRequest,
+  AddGoalRequest,
+  UpdateGoalRequest,
 } from '../types/athlete';
 
 export const athleteApi = {
@@ -40,5 +42,22 @@ export const athleteApi = {
 
   updateTrainingAvailability: async (request: UpdateTrainingAvailabilityRequest): Promise<void> => {
     await apiClient.put('/athlete/training-availability', request);
+  },
+
+  addGoal: async (request: AddGoalRequest): Promise<string> => {
+    const response = await apiClient.post<string>('/athlete/goals', request);
+    return response.data;
+  },
+
+  updateGoal: async (goalId: string, request: UpdateGoalRequest): Promise<void> => {
+    await apiClient.put(`/athlete/goals/${goalId}`, request);
+  },
+
+  deleteGoal: async (goalId: string): Promise<void> => {
+    await apiClient.delete(`/athlete/goals/${goalId}`);
+  },
+
+  setPrimaryGoal: async (goalId: string): Promise<void> => {
+    await apiClient.put(`/athlete/goals/${goalId}/primary`);
   },
 };

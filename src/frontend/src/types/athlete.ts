@@ -6,6 +6,7 @@ export interface Athlete {
   trainingAvailability: TrainingAvailability;
   heartRateZones: HeartRateZone[];
   paceZones: PaceZone[];
+  goals: Goal[];
 }
 
 export interface PersonalInfo {
@@ -95,4 +96,47 @@ export interface UpdateTrainingAvailabilityRequest {
   friday: number;
   saturday: number;
   sunday: number;
+}
+
+export interface Goal {
+  id: string;
+  raceDate: string;
+  targetTime: string;
+  distanceType: DistanceType;
+  customDistanceKm: number | null;
+  distanceDisplay: string;
+  isPrimary: boolean;
+}
+
+export type DistanceType =
+  | 'Distance1600m'
+  | 'Distance5K'
+  | 'Distance10K'
+  | 'Distance16K'
+  | 'HalfMarathon'
+  | 'Marathon'
+  | 'Custom';
+
+export const DISTANCE_TYPES: { value: DistanceType; label: string; km: number | null }[] = [
+  { value: 'Distance1600m', label: '1600m', km: 1.6 },
+  { value: 'Distance5K', label: '5K', km: 5 },
+  { value: 'Distance10K', label: '10K', km: 10 },
+  { value: 'Distance16K', label: '16K', km: 16 },
+  { value: 'HalfMarathon', label: 'Half Marathon', km: 21.0975 },
+  { value: 'Marathon', label: 'Marathon', km: 42.195 },
+  { value: 'Custom', label: 'Custom', km: null },
+];
+
+export interface AddGoalRequest {
+  raceDate: string;
+  targetTime: string;
+  distanceType: number;
+  customDistanceKm: number | null;
+}
+
+export interface UpdateGoalRequest {
+  raceDate: string;
+  targetTime: string;
+  distanceType: number;
+  customDistanceKm: number | null;
 }

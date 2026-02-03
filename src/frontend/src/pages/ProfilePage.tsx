@@ -7,6 +7,10 @@ import {
   useUpdatePhysiologicalData,
   useUpdateTrainingAccess,
   useUpdateTrainingAvailability,
+  useAddGoal,
+  useUpdateGoal,
+  useDeleteGoal,
+  useSetPrimaryGoal,
 } from '../hooks/useAthlete';
 import {
   Box,
@@ -51,11 +55,16 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from '@mui/icons-material/Close';
-import { WORKOUT_TYPES, type WorkoutType } from '../types/athlete';
+import { WORKOUT_TYPES, DISTANCE_TYPES, type WorkoutType, type DistanceType, type Goal } from '../types/athlete';
+import FlagIcon from '@mui/icons-material/Flag';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 
 const DRAWER_WIDTH = 280;
 
-type SectionId = 'personal' | 'physiological' | 'training' | 'availability' | 'heartRateZones' | 'paceZones';
+type SectionId = 'personal' | 'physiological' | 'training' | 'availability' | 'goals' | 'heartRateZones' | 'paceZones';
 
 const DAYS_OF_WEEK = [
   { key: 'monday' as const, label: 'Monday' },
@@ -75,6 +84,16 @@ const WORKOUT_TYPE_TO_NUMBER: Record<WorkoutType, number> = {
   'Speed': 4,
   'TempoRun': 5,
   'LongRun': 6,
+};
+
+const DISTANCE_TYPE_TO_NUMBER: Record<DistanceType, number> = {
+  'Distance1600m': 0,
+  'Distance5K': 1,
+  'Distance10K': 2,
+  'Distance16K': 3,
+  'HalfMarathon': 4,
+  'Marathon': 5,
+  'Custom': 6,
 };
 
 export function ProfilePage() {
@@ -107,6 +126,7 @@ export function ProfilePage() {
     { id: 'physiological' as const, label: 'Physiological Data', icon: <FavoriteIcon /> },
     { id: 'training' as const, label: 'Training Access', icon: <DirectionsRunIcon /> },
     { id: 'availability' as const, label: 'Weekly Schedule', icon: <CalendarMonthIcon /> },
+    { id: 'goals' as const, label: 'Goals', icon: <FlagIcon /> },
     { id: 'heartRateZones' as const, label: 'Heart Rate Zones', icon: <SpeedIcon /> },
     { id: 'paceZones' as const, label: 'Pace Zones', icon: <TimerIcon /> },
   ];
@@ -189,6 +209,7 @@ export function ProfilePage() {
           {activeSection === 'physiological' && <PhysiologicalDataSection athlete={athlete} />}
           {activeSection === 'training' && <TrainingAccessSection athlete={athlete} />}
           {activeSection === 'availability' && <TrainingAvailabilitySection athlete={athlete} />}
+          {activeSection === 'goals' && <GoalsSection athlete={athlete} />}
           {activeSection === 'heartRateZones' && <HeartRateZonesSection athlete={athlete} />}
           {activeSection === 'paceZones' && <PaceZonesSection athlete={athlete} />}
         </Box>
@@ -713,6 +734,282 @@ function PaceZonesSection({ athlete }: { athlete: NonNullable<ReturnType<typeof 
         ) : (
           <Alert severity="info">
             Set your Lactate Threshold Pace in Physiological Data to calculate zones
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function GoalsSection({ athlete }: { athlete: NonNullable<ReturnType<typeof useAthlete>['data']> }) {
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const addGoal = useAddGoal();
+  const updateGoal = useUpdateGoal();
+  const deleteGoal = useDeleteGoal();
+  const setPrimaryGoal = useSetPrimaryGoal();
+
+  const [formData, setFormData] = useState({
+    raceDate: '',
+    targetTime: '',
+    distanceType: 'Distance5K' as DistanceType,
+    customDistanceKm: '',
+  });
+
+  const resetForm = () => {
+    setFormData({
+      raceDate: '',
+      targetTime: '',
+      distanceType: 'Distance5K',
+      customDistanceKm: '',
+    });
+    setError(null);
+  };
+
+  const handleAddClick = () => {
+    resetForm();
+    setIsAdding(true);
+    setEditingGoalId(null);
+  };
+
+  const handleEditClick = (goal: Goal) => {
+    setFormData({
+      raceDate: goal.raceDate,
+      targetTime: goal.targetTime,
+      distanceType: goal.distanceType,
+      customDistanceKm: goal.customDistanceKm?.toString() || '',
+    });
+    setEditingGoalId(goal.id);
+    setIsAdding(false);
+    setError(null);
+  };
+
+  const handleCancel = () => {
+    setIsAdding(false);
+    setEditingGoalId(null);
+    resetForm();
+  };
+
+  const parseTargetTime = (timeStr: string): string => {
+    // Convert display format (1:30:00 or 45:00) to TimeSpan format (HH:mm:ss)
+    const parts = timeStr.split(':');
+    if (parts.length === 2) {
+      // mm:ss format - add hours
+      return `00:${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+    } else if (parts.length === 3) {
+      // h:mm:ss format
+      return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}:${parts[2].padStart(2, '0')}`;
+    }
+    return timeStr;
+  };
+
+  const handleSave = () => {
+    setError(null);
+
+    const request = {
+      raceDate: formData.raceDate,
+      targetTime: parseTargetTime(formData.targetTime),
+      distanceType: DISTANCE_TYPE_TO_NUMBER[formData.distanceType],
+      customDistanceKm: formData.distanceType === 'Custom' ? parseFloat(formData.customDistanceKm) : null,
+    };
+
+    if (isAdding) {
+      addGoal.mutate(request, {
+        onSuccess: () => {
+          setIsAdding(false);
+          resetForm();
+        },
+        onError: (err: unknown) => {
+          const errorMessage = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+            || 'Failed to add goal';
+          setError(errorMessage);
+        },
+      });
+    } else if (editingGoalId) {
+      updateGoal.mutate({ goalId: editingGoalId, request }, {
+        onSuccess: () => {
+          setEditingGoalId(null);
+          resetForm();
+        },
+        onError: (err: unknown) => {
+          const errorMessage = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+            || 'Failed to update goal';
+          setError(errorMessage);
+        },
+      });
+    }
+  };
+
+  const handleDelete = (goalId: string) => {
+    deleteGoal.mutate(goalId, {
+      onError: (err: unknown) => {
+        const errorMessage = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+          || 'Failed to delete goal';
+        setError(errorMessage);
+      },
+    });
+  };
+
+  const handleSetPrimary = (goalId: string) => {
+    setPrimaryGoal.mutate(goalId, {
+      onError: (err: unknown) => {
+        const errorMessage = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+          || 'Failed to set primary goal';
+        setError(errorMessage);
+      },
+    });
+  };
+
+  const renderForm = () => (
+    <Box sx={{ mb: 2 }}>
+      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+        <TextField
+          label="Race Date"
+          type="date"
+          value={formData.raceDate}
+          onChange={(e) => setFormData({ ...formData, raceDate: e.target.value })}
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ minWidth: 150 }}
+        />
+        <TextField
+          label="Target Time"
+          value={formData.targetTime}
+          onChange={(e) => setFormData({ ...formData, targetTime: e.target.value })}
+          placeholder="e.g. 3:30:00 or 45:00"
+          helperText="Format: H:MM:SS or MM:SS"
+          sx={{ minWidth: 150 }}
+        />
+        <FormControl sx={{ minWidth: 150 }}>
+          <Select
+            value={formData.distanceType}
+            onChange={(e) => setFormData({ ...formData, distanceType: e.target.value as DistanceType })}
+            size="small"
+          >
+            {DISTANCE_TYPES.map((dt) => (
+              <MenuItem key={dt.value} value={dt.value}>{dt.label}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        {formData.distanceType === 'Custom' && (
+          <TextField
+            label="Distance (km)"
+            type="number"
+            value={formData.customDistanceKm}
+            onChange={(e) => setFormData({ ...formData, customDistanceKm: e.target.value })}
+            sx={{ minWidth: 120 }}
+          />
+        )}
+      </Box>
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <Button
+          variant="contained"
+          startIcon={<SaveIcon />}
+          onClick={handleSave}
+          disabled={addGoal.isPending || updateGoal.isPending}
+        >
+          Save
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<CloseIcon />}
+          onClick={handleCancel}
+        >
+          Cancel
+        </Button>
+      </Box>
+    </Box>
+  );
+
+  return (
+    <Card sx={{ maxWidth: 900 }}>
+      <CardHeader
+        title="Goals"
+        subheader="Set your race goals with target times. One goal must be marked as primary."
+        action={
+          !isAdding && !editingGoalId && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleAddClick}
+              size="small"
+            >
+              Add Goal
+            </Button>
+          )
+        }
+      />
+      <CardContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        {(isAdding || editingGoalId) && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
+              {isAdding ? 'Add New Goal' : 'Edit Goal'}
+            </Typography>
+            {renderForm()}
+          </Box>
+        )}
+
+        {athlete.goals.length > 0 && !editingGoalId ? (
+          <TableContainer component={Paper} variant="outlined">
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell width={50}>Primary</TableCell>
+                  <TableCell>Distance</TableCell>
+                  <TableCell>Race Date</TableCell>
+                  <TableCell>Target Time</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {athlete.goals.map((goal) => (
+                    <TableRow key={goal.id} sx={goal.isPrimary ? { bgcolor: 'action.selected' } : {}}>
+                      <TableCell>
+                        <IconButton
+                          onClick={() => !goal.isPrimary && handleSetPrimary(goal.id)}
+                          disabled={goal.isPrimary || setPrimaryGoal.isPending}
+                          size="small"
+                          color={goal.isPrimary ? 'primary' : 'default'}
+                        >
+                          {goal.isPrimary ? <StarIcon /> : <StarBorderIcon />}
+                        </IconButton>
+                      </TableCell>
+                      <TableCell>
+                        <Chip label={goal.distanceDisplay} size="small" />
+                      </TableCell>
+                      <TableCell>{goal.raceDate}</TableCell>
+                      <TableCell>{goal.targetTime}</TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          onClick={() => handleEditClick(goal)}
+                          size="small"
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          onClick={() => handleDelete(goal.id)}
+                          disabled={deleteGoal.isPending}
+                          size="small"
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        ) : !isAdding && !editingGoalId && (
+          <Alert severity="info">
+            No goals set yet. Add your first goal to start planning your training!
           </Alert>
         )}
       </CardContent>

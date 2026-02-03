@@ -79,5 +79,14 @@ public class AthleteConfiguration : IEntityTypeConfiguration<Athlete>
         // They are not stored in the database
         builder.Ignore(a => a.HeartRateZones);
         builder.Ignore(a => a.PaceZones);
+
+        // Goals collection - use backing field
+        builder.Navigation(a => a.Goals)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasMany(a => a.Goals)
+            .WithOne()
+            .HasForeignKey(g => g.AthleteId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
