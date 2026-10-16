@@ -17,10 +17,10 @@ NextStep er Tokes løbetræningsprojekt: træningsplaner og -definitioner, som C
   - `Athlete-zones.md` – atletens konkrete LT-værdier, puls- og pacezoner, Garmin-zoner
 - `WebApp/` – træningsprogrammer som statiske web apps
   - `DesignSystem.md` – designsystem: tokens, typografi, komponenter, kanonisk CSS og ikon
-  - `ApplicationStructure.md` – applikationsstruktur: skærme, navigation, UX, datamodel, HTML-skelet og kerne-JS
-  - `<Programnavn>/index.html` – ét program pr. mappe (single-page HTML-app i én fil)
+  - `ApplicationStructure.md` – applikationsstruktur: skærme, navigation, UX, datamodel, HTML-skelet, manifest, service worker og kerne-JS
+  - `<Programnavn>/` – ét program pr. mappe: `index.html` (single-page HTML-app) + `manifest.webmanifest`, `sw.js` og `icons/`, så det kan installeres som app (PWA)
   - **Begge filer læses altid, før et program laves eller opdateres.**
-  - Deployment: push til `main` på github.com/tokeboisen/nextstep udgiver alle `WebApp/<Programnavn>/index.html` til https://tokeboisen.github.io/nextstep/ (`.github/workflows/pages.yml`). Kun programmerne udgives, ikke `.md`-filerne.
+  - Deployment: push til `main` på github.com/tokeboisen/nextstep udgiver alle `WebApp/<Programnavn>/`-mapper til https://tokeboisen.github.io/nextstep/ (`.github/workflows/pages.yml`). Kun programmerne udgives, ikke `.md`-filerne.
 - `Features/` – app-features
 - `Templates/` – skabeloner
 
@@ -40,7 +40,7 @@ NextStep er Tokes løbetræningsprojekt: træningsplaner og -definitioner, som C
 ## Når Claude bygger en plan
 Følg proceduren i `Training-paradigme.md`. Brug pastyper fra definitionsfilerne og værdier fra `Athlete-zones.md`. Lever planen som en komplet fil med konkrete pas, pace, puls og tid.
 
-- **Leveres som web app.** Et program bygges altid som en single-page HTML-app i én fil, `WebApp/<Programnavn>/index.html`, efter byggeproceduren i `WebApp/ApplicationStructure.md` og med CSS og ikon fra `WebApp/DesignSystem.md`. Der findes ingen template.
+- **Leveres som web app.** Et program bygges altid som en installérbar single-page HTML-app i `WebApp/<Programnavn>/` (`index.html` + app-filer), efter byggeproceduren i `WebApp/ApplicationStructure.md` og med CSS og ikon fra `WebApp/DesignSystem.md`. Der findes ingen template.
 - **Opdatering af et program:** ret kun programindholdet (`PROGRAM` og pas-byggere); behold `PROGRAM.id`.
 - Designsystem og applikationsstruktur må ikke fraviges i et program. Skal design, UI eller UX ændres, opdateres `DesignSystem.md` / `ApplicationStructure.md` først, og eksisterende programmer bygges igen.
 

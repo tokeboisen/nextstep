@@ -8,8 +8,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="NextStep">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" id="icon">
-<link rel="apple-touch-icon" id="touch-icon">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -304,8 +305,7 @@ function start(){
   START=new Date(PROGRAM.start+'T00:00:00');
   NW=PROGRAM.weeks.length;
   document.title=PROGRAM.title||'NextStep';
-  const url='data:image/svg+xml,'+encodeURIComponent(ICON);
-  $('icon').href=url; $('touch-icon').href=url;
+  $('icon').href='data:image/svg+xml,'+encodeURIComponent(ICON);
   validate();
   window.addEventListener('hashchange',route);
   route();
@@ -501,6 +501,7 @@ const PROGRAM={
   end:{title:'Næste skridt',text:'Notér 5 km-tid og splits, opdatér zonerne, og planlæg næste blok ud fra træningsparadigmet.'}
 };
 start();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>

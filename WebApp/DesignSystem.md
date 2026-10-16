@@ -3,7 +3,7 @@
 **Denne fil er det gældende designsystem for alle træningsprogrammer.** Claude bruger det altid, når et program laves eller opdateres. Sammen med `ApplicationStructure.md` er den hele kilden til appen – der findes ingen template. Designsystemet ejer det visuelle: tokens, typografi, layout, komponenter, CSS og ikon. Applikationsstrukturen ejer skærme, navigation, adfærd og kode.
 
 ## Principper
-- **Én fil.** Appen er en single-page HTML-app: al CSS, JS, data og ikon ligger i én `index.html`.
+- **Én side, installérbar.** Appen er en single-page HTML-app: al CSS, JS og data ligger i én `index.html`. Ved siden af ligger kun det, der gør den til en installérbar app (PWA): manifest, service worker og PNG-ikoner (se `ApplicationStructure.md`, afsnit 1).
 - **Løbebanen som motiv.** Mørk "lane"-hero med vandrette banestriber; pastypefarven som venstrekant og bjælke.
 - **Tal i fokus.** Tid, km, pace og ugenumre i Barlow Condensed – læsbart i farten på en telefon.
 - **Farve betyder pastype.** Farver bruges kun til pastyper og status – aldrig som pynt.
@@ -48,7 +48,7 @@ Nye pastyper får et nyt token i både lys og mørk og en række i tabellen oven
 | Tal (tid, km, pace, uge) | Barlow Condensed | 500/700 |
 | Små labels | Barlow | 600, .72–.85rem |
 
-Fonte hentes fra Google Fonts (eneste eksterne ressource), med systemfonte som fallback.
+Fonte hentes fra Google Fonts (eneste eksterne ressource) og caches af service workeren, så de også virker offline; systemfonte er fallback.
 
 ## Afstand, form og bevægelse
 - Indholdsbredde: maks. 720px (`.wrap`), sidemargin 1rem
@@ -199,11 +199,47 @@ td.n{white-space:nowrap}
 ```
 
 ## Ikon (kanonisk)
-En trappe på løbebane: tre lyse trin stiger mod højre, øverste trin har en rød top (`--speed`). Bruges som favicon og hjemmeskærmsikon og indlejres i appen som SVG (se `ApplicationStructure.md`).
+En trappe på løbebane: tre lyse trin stiger mod højre, øverste trin har en rød top (`--speed`). SVG'en er kilden til alle ikoner: den indlejres i appen som favicon (se `ApplicationStructure.md`), og hjemmeskærmsikonerne er PNG-filer genereret fra den.
 
 ```svg
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#16232F"/><g fill="#FFFFFF" fill-opacity=".08"><rect y="63" width="512" height="2"/><rect y="127" width="512" height="2"/><rect y="191" width="512" height="2"/><rect y="255" width="512" height="2"/><rect y="319" width="512" height="2"/><rect y="383" width="512" height="2"/><rect y="447" width="512" height="2"/></g><path fill="#F3F5F4" d="M88 312h112V200h112V120h112v304H88z"/><rect x="312" y="88" width="112" height="32" fill="#C8372D"/></svg>
 ```
+
+### Maskable variant
+Android beskærer hjemmeskærmsikoner til cirkel, dråbe m.m. og garanterer kun en central cirkel med radius 40 % af siden. Maskable-varianten er den kanoniske SVG, hvor trappen (ikke baggrund og banestriber) er skaleret til 75 % om midten (`translate(64 64) scale(.75)`), så alle hjørner ligger inden for den sikre zone.
+
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#16232F"/><g fill="#FFFFFF" fill-opacity=".08"><rect y="63" width="512" height="2"/><rect y="127" width="512" height="2"/><rect y="191" width="512" height="2"/><rect y="255" width="512" height="2"/><rect y="319" width="512" height="2"/><rect y="383" width="512" height="2"/><rect y="447" width="512" height="2"/></g><g transform="translate(64 64) scale(.75)"><path fill="#F3F5F4" d="M88 312h112V200h112V120h112v304H88z"/><rect x="312" y="88" width="112" height="32" fill="#C8372D"/></g></svg>
+```
+
+### PNG-ikoner
+Ligger i `WebApp/<Programnavn>/icons/` og er ens i alle programmer.
+
+| Fil | Størrelse | Kilde | Bruges til |
+|---|---|---|---|
+| `icon-180.png` | 180 × 180 | Kanonisk SVG | `apple-touch-icon` (iPhone-hjemmeskærm) |
+| `icon-192.png` | 192 × 192 | Kanonisk SVG | Manifest, `purpose: any` |
+| `icon-512.png` | 512 × 512 | Kanonisk SVG | Manifest, `purpose: any` (installation, splash) |
+| `icon-maskable-512.png` | 512 × 512 | Maskable variant | Manifest, `purpose: maskable` (Android) |
+
+Generering: render SVG'en på et `<canvas>` i præcis ikonstørrelsen i en headless Chrome/Edge og gem `canvas.toDataURL('image/png')` som fil. Sådan en side, fx `render.html`:
+
+```html
+<pre id="o"></pre><script>
+const SVG=`…SVG fra ovenfor…`, N=192;
+const img=new Image();
+img.onload=()=>{const c=document.createElement('canvas');c.width=c.height=N;c.getContext('2d').drawImage(img,0,0,N,N);o.textContent=c.toDataURL('image/png')};
+img.src='data:image/svg+xml,'+encodeURIComponent(SVG);
+</script>
+```
+
+køres med `chrome --headless --virtual-time-budget=3000 --dump-dom render.html`, og base64-delen af data-URL'en afkodes til `icon-192.png`. (`--screenshot --window-size` giver ikke præcise mål – vinduets ramme trækkes fra.) Ændres ikonet, ændres SVG'en her først, og alle PNG-filer genereres igen og kopieres til alle programmer.
+
+### App-farver
+| Felt | Værdi | Begrundelse |
+|---|---|---|
+| `theme-color` / manifest `theme_color` | #16232F | Lys `--lane` – statuslinje og titellinje matcher heroen |
+| manifest `background_color` | #16232F | Splash-skærm ved opstart i samme farve som ikonets baggrund |
 
 ## Sprog og tekst
 - Al tekst er på dansk; tal med dansk notation for tid (`4:30`, `90″`, `2′`)

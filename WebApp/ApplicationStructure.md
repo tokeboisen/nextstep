@@ -3,19 +3,33 @@
 **Denne fil beskriver hele appens UI-struktur og UX.** Claude bygger altid et træningsprogram ud fra denne fil og `DesignSystem.md` – der findes ingen template. Designsystemet ejer det visuelle (CSS, ikon); denne fil ejer skærme, navigation, adfærd, datamodel og kode.
 
 ## 1. Arkitektur
-- **Single-page HTML-app i én fil:** `WebApp/<Programnavn>/index.html`. Ingen andre filer, ingen build-step, ingen frameworks.
-- Al CSS (fra `DesignSystem.md`), al JS (kernen nedenfor) og alt programindhold ligger inline.
-- Eneste eksterne ressource er Google Fonts. Uden net vises systemfonte.
+- **Single-page HTML-app, installérbar som app (PWA).** Ingen build-step, ingen frameworks, ingen app-butik. Hvert program er én mappe med præcis disse filer:
+
+  ```
+  WebApp/<Programnavn>/
+  ├── index.html               appen: CSS, kerne-JS og programindhold inline (afsnit 9–10)
+  ├── manifest.webmanifest     web app-manifest (afsnit 9) – ens i alle programmer
+  ├── sw.js                    service worker (afsnit 9) – ens i alle programmer
+  └── icons/                   PNG-ikoner fra DesignSystem.md – ens i alle programmer
+      ├── icon-180.png
+      ├── icon-192.png
+      ├── icon-512.png
+      └── icon-maskable-512.png
+  ```
+- Al CSS (fra `DesignSystem.md`), al JS (kernen nedenfor) og alt programindhold ligger inline i `index.html`. Kun `index.html` ændres pr. program.
+- Eneste eksterne ressource er Google Fonts. Uden net og uden cache vises systemfonte.
 - Navigation sker med hash-routes i samme side; ingen sideskift.
 - Tilstand (gennemførte pas, senest viste uge) gemmes i `localStorage` på enheden.
-- Kan føjes til hjemmeskærmen fra browserens menu (ikon og `theme-color` er indlejret).
+- **Installation:** Android/Chrome tilbyder "Installer app" ud fra manifestet; på iPhone bruges Safari → Del → "Føj til hjemmeskærm" (`apple-touch-icon` og `apple-mobile-web-app-*`). Appen åbner i fuld skærm uden browserlinje (`display: standalone`).
+- **Offline:** service workeren cacher appen, manifest, ikoner og Google Fonts ved første besøg. Appen åbner altid straks fra cachen og henter samtidig en ny version i baggrunden; en opdateret `index.html` vises derfor ved næste åbning.
+- Manifest og service worker bruger relative stier (`./`), så samme filer virker i enhver programmappe; scope er programmappen, så flere programmer på samme domæne er adskilte apps.
 
 Appen består af tre lag:
 
 | Lag | Kilde | Ændres pr. program? |
 |---|---|---|
-| Udseende | CSS og ikon fra `DesignSystem.md` | Nej |
-| Kerne | HTML-skelet og kerne-JS i denne fil (afsnit 9–10) | Nej |
+| Udseende | CSS, ikon og PNG-ikoner fra `DesignSystem.md` | Nej |
+| Kerne | HTML-skelet, manifest, service worker og kerne-JS i denne fil (afsnit 9–10) | Nej |
 | Programindhold | `PROGRAM`-objektet (afsnit 7) | Ja – det eneste, der skrives pr. program |
 
 ## 2. Informationsarkitektur
@@ -235,15 +249,22 @@ const PROGRAM={
 
 ## 8. Byggeprocedure
 1. Læs `DesignSystem.md` og denne fil.
-2. Opret `WebApp/<Programnavn>/index.html` ud fra HTML-skelettet (afsnit 9):
+2. Opret `WebApp/<Programnavn>/index.html` ud fra HTML-skelettet (afsnit 9.1):
    - `{{CSS}}` ← CSS-blokken fra `DesignSystem.md`, uændret
    - `{{IKON}}` ← SVG'en fra `DesignSystem.md`, uændret (som JS-streng)
    - `{{KERNE}}` ← kerne-JS (afsnit 10), uændret
    - `{{PROGRAM}}` ← programindholdet (afsnit 7)
-3. **Opdatering:** ret kun `{{PROGRAM}}`-delen. Ændres `PROGRAM.id`, nulstilles "gennemført" – behold id'et ved opdateringer af samme program.
-4. Kør tjeklisten (afsnit 11).
+3. Læg app-filerne ved siden af, uændret:
+   - `manifest.webmanifest` ← afsnit 9.2
+   - `sw.js` ← afsnit 9.3
+   - `icons/` ← de fire PNG-ikoner fra `DesignSystem.md` (kopiér fra et eksisterende program, eller generér dem efter `DesignSystem.md`)
+4. **Opdatering:** ret kun `{{PROGRAM}}`-delen. Ændres `PROGRAM.id`, nulstilles "gennemført" – behold id'et ved opdateringer af samme program. Manifest, service worker og ikoner røres ikke; installerede apps henter den nye `index.html` ved næste åbning.
+5. Kør tjeklisten (afsnit 11).
+6. Udgiv: push til `main`. Workflowet `.github/workflows/pages.yml` udgiver hele `WebApp/<Programnavn>/`-mappen (uden `.md`-filer) til `https://tokeboisen.github.io/nextstep/<Programnavn>/`.
 
-## 9. HTML-skelet (kanonisk)
+## 9. App-filer (kanoniske)
+
+### 9.1 HTML-skelet – `index.html`
 
 ```html
 <!DOCTYPE html>
@@ -256,8 +277,9 @@ const PROGRAM={
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="NextStep">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" id="icon">
-<link rel="apple-touch-icon" id="touch-icon">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -276,9 +298,88 @@ const ICON=`{{IKON}}`;
 {{KERNE}}
 {{PROGRAM}}
 start();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
+```
+
+Favicon er den indlejrede SVG (sættes af `start()`); hjemmeskærmsikonet på iPhone er `icons/icon-180.png`. Registreringen af service workeren fejler stille, hvis siden åbnes som lokal fil (`file://`) – appen virker stadig, blot uden offline-cache.
+
+### 9.2 Manifest – `manifest.webmanifest`
+
+```json
+{
+  "id": "./",
+  "name": "NextStep",
+  "short_name": "NextStep",
+  "description": "Løbetræningsprogram: dagens pas, ugeoversigt og Garmin-opsætning.",
+  "lang": "da",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#16232F",
+  "background_color": "#16232F",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
+```
+
+Stierne er relative til manifestet, så `start_url`, `scope` og `id` bliver programmappen, fx `https://tokeboisen.github.io/nextstep/tokeboisen/`.
+
+### 9.3 Service worker – `sw.js`
+
+Strategi:
+- **Installation:** cacher appen (`./`), manifest og ikoner samt Google Fonts-CSS'en og de fontfiler, den peger på. Fontene hentes her, fordi siden ved første besøg loader dem, før service workeren styrer siden.
+- **Appens egne filer:** *stale-while-revalidate* – svar straks fra cachen, hent samtidig en frisk kopi (uden om HTTP-cachen) og gem den. Ny version vises derfor ved næste åbning. Alle sidevisninger i scope (også `?dato=`) besvares med den cachede `./`.
+- **Google Fonts:** *cache-first* – fonte ændrer sig ikke.
+- Cachens navn følger scope, så flere programmer på samme domæne ikke deler cache.
+
+```js
+/* NextStep service worker – ens i alle programmer */
+const SCOPE=new URL(self.registration.scope).pathname;
+const CACHE='nextstep:'+SCOPE;
+const APP=['./','manifest.webmanifest','icons/icon-180.png','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png'];
+const FONTS='https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500;600&display=swap';
+const FONT_HOSTS=['https://fonts.googleapis.com','https://fonts.gstatic.com'];
+
+self.addEventListener('install',e=>e.waitUntil((async()=>{
+  const c=await caches.open(CACHE);
+  await c.addAll(APP.map(u=>new Request(u,{cache:'reload'})));
+  try{                                        // fonte er valgfrie – fejl stopper ikke installationen
+    const res=await fetch(FONTS);
+    const css=await res.clone().text();
+    await c.put(FONTS,res);
+    await c.addAll([...css.matchAll(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g)].map(m=>m[1]));
+  }catch(err){}
+  await self.skipWaiting();
+})()));
+
+self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
+
+self.addEventListener('fetch',e=>{
+  const req=e.request, url=new URL(req.url);
+  if(req.method!=='GET') return;
+  if(FONT_HOSTS.includes(url.origin)){
+    e.respondWith(caches.match(req,{ignoreVary:true}).then(hit=>hit||fetch(req).then(res=>{
+      const copy=res.clone(); caches.open(CACHE).then(c=>c.put(req,copy)); return res;
+    })));
+    return;
+  }
+  if(url.origin!==location.origin||!url.pathname.startsWith(SCOPE)) return;
+  const key=req.mode==='navigate'?new Request('./'):req;
+  e.respondWith((async()=>{
+    const c=await caches.open(CACHE);
+    const hit=await c.match(key,{ignoreSearch:true});
+    const net=fetch(key,{cache:'no-cache'}).then(res=>{if(res.ok)c.put(key,res.clone());return res});
+    if(hit){e.waitUntil(net.catch(()=>{}));return hit}
+    return net;
+  })());
+});
 ```
 
 ## 10. Kerne-JS (kanonisk)
@@ -451,8 +552,7 @@ function start(){
   START=new Date(PROGRAM.start+'T00:00:00');
   NW=PROGRAM.weeks.length;
   document.title=PROGRAM.title||'NextStep';
-  const url='data:image/svg+xml,'+encodeURIComponent(ICON);
-  $('icon').href=url; $('touch-icon').href=url;
+  $('icon').href='data:image/svg+xml,'+encodeURIComponent(ICON);
   validate();
   window.addEventListener('hashchange',route);
   route();
@@ -474,7 +574,7 @@ function validate(){
 ```
 
 ## 11. Tjekliste før levering
-1. `index.html` er én fil; CSS og kerne er kopieret uændret fra `DesignSystem.md` og afsnit 9–10.
+1. Programmappen indeholder præcis `index.html`, `manifest.webmanifest`, `sw.js` og `icons/` (fire PNG'er); CSS, skelet, manifest, service worker og kerne er kopieret uændret fra `DesignSystem.md` og afsnit 9–10.
 2. Siden åbner uden fejl i konsollen.
 3. "I dag" virker for en dag med pas, en hviledag, før start og efter slut (brug `?dato=`).
 4. Hver uge viser 7 dage; alle pas kan åbnes; "‹ Uge n" går tilbage.
@@ -482,3 +582,11 @@ function validate(){
 6. Gennemført-knappen gemmer og vises som "✓ Klaret" i ugen.
 7. Alle pas og trin har både pace og puls – konsollen viser ingen "Mangler pace/puls"-fejl.
 8. Lys og mørk tilstand ser rigtige ud; ingen vandret scroll ved 375px bredde.
+
+Efter udgivelse (på `https://tokeboisen.github.io/nextstep/<Programnavn>/`):
+
+9. `manifest.webmanifest`, `sw.js` og alle fire PNG-ikoner svarer med 200; manifestet er gyldig JSON med `start_url` og `scope` = programmappen og `display: standalone`.
+10. Chrome DevTools → Application: manifestet vises uden fejl, service workeren er "activated and running", og cachen indeholder app, manifest, ikoner og fonte.
+11. Chrome (Android eller desktop) tilbyder "Installer app"; Lighthouse viser appen som installérbar.
+12. Offline virker: efter første besøg åbner siden med netværket slået fra (DevTools → Network → Offline) – med Barlow-fonte – og navigation mellem uger og pas virker.
+13. På iPhone: Safari → Del → "Føj til hjemmeskærm" giver NextStep-ikonet, og appen åbner uden browserlinje.

@@ -23,15 +23,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Kun programmerne (WebApp/<Programnavn>/index.html) udgives – ingen .md-filer.
+      # Kun programmerne udgives: hele WebApp/<Programnavn>/-mappen
+      # (index.html, manifest.webmanifest, sw.js, icons/) – ingen .md-filer.
       - name: Saml site
         run: |
           mkdir -p _site
           for f in WebApp/*/index.html; do
-            dir=$(basename "$(dirname "$f")")
-            mkdir -p "_site/$dir"
-            cp "$f" "_site/$dir/index.html"
+            dir=$(dirname "$f")
+            cp -r "$dir" "_site/$(basename "$dir")"
           done
+          find _site -name '*.md' -delete
           cat > _site/index.html <<'EOF'
           <!DOCTYPE html>
           <html lang="da"><head><meta charset="utf-8">
