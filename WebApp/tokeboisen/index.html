@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NextStep</title>
+<meta name="theme-color" content="#16232F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="NextStep">
+<link rel="icon" id="icon">
+<link rel="apple-touch-icon" id="touch-icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#F3F5F4; --surface:#FFFFFF; --ink:#16232F; --muted:#5B6873; --line:#D6DCDF; --soft:#E9EDEE;
+  --speed:#C8372D; --thr:#D99612; --tempo:#B5651D; --long:#2E6E8E; --easy:#5C8F6B; --rest:#A7B0B6; --test:#7A3FA0; --morning:#8AA3B0;
+  --lane:#16232F; --laneText:#F3F5F4; --done:#2F8A55;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10181F; --surface:#18232C; --ink:#E6ECEF; --muted:#94A2AC; --line:#2A3843; --soft:#1F2C36;
+    --speed:#E5584D; --thr:#F0B63A; --tempo:#E08A4A; --long:#5AA0C4; --easy:#7DB38C; --rest:#5E6B74; --test:#B07BD6; --morning:#7F98A5;
+    --lane:#0A1016; --laneText:#E6ECEF; --done:#4CB47A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10181F; --surface:#18232C; --ink:#E6ECEF; --muted:#94A2AC; --line:#2A3843; --soft:#1F2C36;
+  --speed:#E5584D; --thr:#F0B63A; --tempo:#E08A4A; --long:#5AA0C4; --easy:#7DB38C; --rest:#5E6B74; --test:#B07BD6; --morning:#7F98A5;
+  --lane:#0A1016; --laneText:#E6ECEF; --done:#4CB47A;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit}
+.wrap{max-width:720px;margin:0 auto;padding:0 1rem}
+main{padding-bottom:calc(5.5rem + env(safe-area-inset-bottom,0px))}
+.cond{font-family:"Barlow Condensed","Arial Narrow",sans-serif}
+
+/* hero */
+.hero{background:var(--lane);color:var(--laneText);position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent 0 38px,rgba(255,255,255,.08) 38px 40px);pointer-events:none}
+.hero .wrap{position:relative;padding-top:1.4rem;padding-bottom:1.3rem}
+.hero .kicker{font-size:.95rem;opacity:.8;margin:0}
+.hero h1{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;font-size:clamp(2.2rem,9vw,3.4rem);line-height:.98;margin:.15rem 0 0}
+.hero .meta{display:flex;flex-wrap:wrap;gap:1.4rem;margin-top:1rem}
+.hero .meta b{display:block;font-family:"Barlow Condensed",sans-serif;font-size:1.6rem;line-height:1}
+.hero .meta span{font-size:.82rem;opacity:.75}
+.hero .bar{position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--c,transparent)}
+.back{background:none;border:0;padding:.2rem 0;margin:0 0 .4rem;color:var(--laneText);opacity:.85;cursor:pointer;font-size:.95rem}
+.back:focus-visible,.navbtn:focus-visible,.daycard:focus-visible,.wk:focus-visible,.donebtn:focus-visible,.tab:focus-visible{outline:2px solid var(--thr);outline-offset:2px}
+
+h2{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.45rem;margin:1.7rem 0 .6rem}
+p{margin:.4rem 0}
+.muted{color:var(--muted)}
+
+/* ugestribe */
+.weekstrip{display:flex;gap:.4rem;overflow-x:auto;padding:.9rem 0 .2rem;scrollbar-width:none}
+.weekstrip::-webkit-scrollbar{display:none}
+.wk{flex:0 0 auto;min-width:2.6rem;height:2.6rem;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-family:"Barlow Condensed",sans-serif;font-size:1.15rem;font-weight:500;position:relative}
+.wk.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.wk.now::after{content:"";position:absolute;bottom:3px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--speed)}
+.wk.dl{border-style:dashed}
+.weeknav{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.8rem}
+.navbtn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:.45rem .8rem;cursor:pointer;min-width:3rem}
+.navbtn[disabled]{opacity:.35;cursor:default}
+.weektitle{text-align:center}
+.weektitle b{display:block;font-family:"Barlow Condensed",sans-serif;font-size:1.7rem;line-height:1.05}
+.weektitle span{font-size:.9rem;color:var(--muted)}
+
+/* dagkort */
+.days{list-style:none;margin:1rem 0 0;padding:0}
+.days li+li{margin-top:.5rem}
+.daycard{display:grid;grid-template-columns:3.4rem 1fr auto;gap:.8rem;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--c,var(--rest));border-radius:0 8px 8px 0;padding:.75rem .85rem;cursor:pointer}
+.daycard.rest{cursor:default;background:transparent;border-color:var(--line) var(--line) var(--line) var(--rest)}
+.daycard .d b{display:block;font-family:"Barlow Condensed",sans-serif;font-size:1.25rem;line-height:1}
+.daycard .d span{font-size:.85rem;color:var(--muted)}
+.daycard h3{margin:0;font-size:1.02rem;font-weight:600;line-height:1.25}
+.daycard .sum{margin:.15rem 0 0;font-size:.88rem;color:var(--muted);line-height:1.35}
+.daycard .t{font-family:"Barlow Condensed",sans-serif;font-size:1.2rem;text-align:right;white-space:nowrap}
+.daycard .t small{display:block;font-family:"Barlow",sans-serif;font-size:.75rem;color:var(--done);font-weight:600}
+.daycard.today{box-shadow:0 0 0 2px var(--ink)}
+.tag{display:inline-block;font-size:.72rem;font-weight:600;border:1px solid var(--line);border-radius:3px;padding:0 .35rem;margin-left:.35rem;vertical-align:.1rem;color:var(--muted)}
+
+/* pas */
+.chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:.6rem 0 0;padding:0;list-style:none}
+.chips li{font-size:.85rem;border:1px solid rgba(255,255,255,.3);border-radius:4px;padding:.1rem .5rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.9rem 1rem}
+.steps{list-style:none;margin:0;padding:0}
+.step{display:grid;grid-template-columns:1.7rem 1fr;gap:.6rem;padding:.65rem 0;border-bottom:1px solid var(--line)}
+.step:last-child{border-bottom:0}
+.step>.num{font-family:"Barlow Condensed",sans-serif;font-size:1.15rem;color:var(--muted);text-align:right;line-height:1.4}
+.srow{display:flex;justify-content:space-between;gap:.6rem;align-items:baseline;flex-wrap:wrap}
+.stype{font-weight:600}
+.stype i{display:inline-block;width:.6rem;height:.6rem;border-radius:50%;margin-right:.4rem;background:var(--k);vertical-align:.05rem}
+.sdur{font-family:"Barlow Condensed",sans-serif;font-size:1.25rem;line-height:1.1}
+.stgt{font-size:.92rem;margin-top:.1rem}
+.snote{font-size:.85rem;color:var(--muted);margin-top:.1rem}
+.rep{border:1px dashed var(--line);border-radius:6px;padding:.3rem .7rem;margin-top:.1rem;background:var(--soft)}
+.rep .step{grid-template-columns:1fr;padding:.5rem 0}
+.rephead{display:flex;justify-content:space-between;font-weight:600;padding:.3rem 0 .15rem}
+.k-warm{--k:var(--long)} .k-run{--k:var(--speed)} .k-rec{--k:var(--easy)} .k-rest{--k:var(--rest)} .k-cool{--k:var(--long)}
+.rules{margin:0;padding-left:1.1rem}
+.rules li{margin:.3rem 0}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:.45rem .5rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted)}
+td.n{white-space:nowrap}
+.donebtn{display:block;width:100%;margin-top:1.4rem;padding:.8rem;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-weight:600;cursor:pointer}
+.donebtn.is{background:var(--done);border-color:var(--done);color:#fff}
+.notice{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--rest);border-radius:0 8px 8px 0;padding:.9rem 1rem;margin-top:1rem}
+.notice h3{margin:0 0 .2rem;font-size:1.05rem}
+.splits{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;text-align:center;margin-top:.4rem}
+.splits div{background:var(--soft);border-radius:6px;padding:.35rem 0}
+.splits b{display:block;font-family:"Barlow Condensed",sans-serif;font-size:1.2rem}
+.splits span{font-size:.75rem;color:var(--muted)}
+
+/* bundmenu */
+.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+.tabs .wrap{display:grid;grid-template-columns:1fr 1fr}
+.tab{background:none;border:0;padding:.75rem 0 .8rem;cursor:pointer;font-weight:600;color:var(--muted);border-top:3px solid transparent}
+.tab.on{color:var(--ink);border-top-color:var(--ink)}
+@media (prefers-reduced-motion:no-preference){.view{animation:in .18s ease-out}@keyframes in{from{opacity:.4}to{opacity:1}}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<nav class="tabs" aria-label="Hovedmenu"><div class="wrap">
+  <button class="tab" id="tab-today" onclick="go('#/')">I dag</button>
+  <button class="tab" id="tab-prog" onclick="go('#/uge/'+lastWeek())">Program</button>
+</div></nav>
+<script>
+const ICON=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#16232F"/><g fill="#FFFFFF" fill-opacity=".08"><rect y="63" width="512" height="2"/><rect y="127" width="512" height="2"/><rect y="191" width="512" height="2"/><rect y="255" width="512" height="2"/><rect y="319" width="512" height="2"/><rect y="383" width="512" height="2"/><rect y="447" width="512" height="2"/></g><path fill="#F3F5F4" d="M88 312h112V200h112V120h112v304H88z"/><rect x="312" y="88" width="112" height="32" fill="#C8372D"/></svg>`;
+/* ============ Kerne – ændres ikke pr. program ============ */
+const DAYS=['Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag','Søndag'];
+const SD=['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
+const MON=['januar','februar','marts','april','maj','juni','juli','august','september','oktober','november','december'];
+let START, NW;
+
+/* Kalender */
+function dateOf(w,d){const x=new Date(START);x.setDate(x.getDate()+(w-1)*7+d);return x}
+function dShort(x){return x.getDate()+'/'+(x.getMonth()+1)}
+function dLong(x){return x.getDate()+'. '+MON[x.getMonth()]}
+function todayDate(){
+  const q=new URLSearchParams(location.search).get('dato');
+  const t=q?new Date(q+'T12:00:00'):new Date();
+  return new Date(t.getFullYear(),t.getMonth(),t.getDate());
+}
+function dayIndex(){return Math.round((todayDate()-START)/86400000)}
+
+/* Pace */
+function toS(p){const [m,s]=p.split(':').map(Number);return m*60+s}
+function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function g(p){
+  if(p.includes('–')){const [a,b]=p.split('–');return fmt(toS(a)-2)+'–'+fmt(toS(b)+2)}
+  return fmt(toS(p)-5)+'–'+fmt(toS(p)+5);
+}
+
+/* Trin */
+const S=(kind,dur,pace,hr,note,tgt='pace')=>({kind,dur,pace,hr,note,tgt});
+const PACE_RE=/^\d+:\d\d(–\d+:\d\d)?$/;
+const R=(n,steps,note)=>({repeat:n,steps,note});
+const KIND={warm:'Opvarmning',run:'Løb',rec:'Restitution',rest:'Hvile',cool:'Nedløb'};
+const COL={speed:'var(--speed)',thr:'var(--thr)',tempo:'var(--tempo)',long:'var(--long)',easy:'var(--easy)',test:'var(--test)',race:'var(--test)',morning:'var(--morning)'};
+const TYPE={speed:'Speed',thr:'Threshold',tempo:'Tempo',long:'Long run',easy:'Rolig',test:'Testløb',race:'Race',morning:'Morgenløb'};
+
+/* Program-opslag */
+function session(wn,d){
+  const w=PROGRAM.weeks[wn-1], f=w&&w.days[d];
+  if(!f) return null;
+  const s=typeof f==='function'?f():{...f};
+  if(s.strength&&PROGRAM.strength) s.str=PROGRAM.strength(s.strength,wn);
+  return s;
+}
+function mornings(wn){let n=0;for(let d=0;d<7;d++){const s=session(wn,d);if(s&&s.kind==='morning')n++}return n}
+
+/* Lager */
+const key=k=>PROGRAM.id+'-'+k;
+function isDone(w,d){try{return localStorage.getItem(key(`done-${w}-${d}`))==='1'}catch(e){return false}}
+function setDone(w,d,v){try{v?localStorage.setItem(key(`done-${w}-${d}`),'1'):localStorage.removeItem(key(`done-${w}-${d}`))}catch(e){}}
+function lastWeek(){try{const v=+localStorage.getItem(key('week'));if(v>=1&&v<=NW)return v}catch(e){} return Math.min(NW,Math.max(1,Math.floor(dayIndex()/7)+1))}
+function saveWeek(n){try{localStorage.setItem(key('week'),n)}catch(e){}}
+
+/* Rendering */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function go(h){location.hash=h}
+function tLabel(s){return s.timeLabel||(s.time+' min')}
+function countSteps(steps){return steps.reduce((a,s)=>a+(s.repeat?s.steps.length:1),0)}
+function toggleDone(w,d){setDone(w,d,!isDone(w,d));route()}
+
+const GT='<span class="tag">Garmin-mål</span>';
+function stepHTML(st,num){
+  if(st.repeat){
+    return `<li class="step"><div class="num">${num}</div><div><div class="rep">
+      <div class="rephead"><span>Gentag ${st.repeat}×${st.note?' – '+esc(st.note):''}</span></div>
+      <ol class="steps">${st.steps.map(x=>stepHTML(x,'')).join('')}</ol></div></div></li>`;
+  }
+  const inner=`<div class="srow"><span class="stype k-${st.kind}"><i></i>${KIND[st.kind]}</span><span class="sdur">${esc(st.dur)}</span></div>
+    <div class="stgt">Pace ${esc(st.pace)}${st.tgt==='pace'&&PACE_RE.test(st.pace)?` (Garmin ${g(st.pace)})`:''}${st.tgt==='pace'?GT:''}</div>
+    <div class="stgt">Puls ${esc(st.hr)}${st.tgt==='hr'?GT:''}</div>${st.note?`<div class="snote">${esc(st.note)}</div>`:''}`;
+  return num===''?`<li class="step"><div>${inner}</div></li>`:`<li class="step"><div class="num">${num}</div><div>${inner}</div></li>`;
+}
+
+function detailHTML(wn,d,opts={}){
+  const s=session(wn,d), date=dateOf(wn,d), w=PROGRAM.weeks[wn-1], done=isDone(wn,d);
+  const chips=[TYPE[s.kind]]; if(s.level)chips.push(s.level); if(s.str)chips.push(s.str.name); if(w.dl)chips.push('Deload');
+  let h=`<header class="hero" style="--c:${COL[s.kind]}"><div class="bar"></div><div class="wrap">
+    ${opts.back?`<button class="back" onclick="history.length>1?history.back():go('#/uge/${wn}')">‹ Uge ${wn}</button>`:''}
+    <p class="kicker">${opts.kicker?esc(opts.kicker)+' – ':''}${DAYS[d]} ${dLong(date)} · Uge ${wn}</p>
+    <h1>${esc(s.title)}</h1>
+    <ul class="chips">${chips.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>
+    <div class="meta"><div><b>${esc(tLabel(s))}</b><span>${s.kind==='race'?'måltid':'totaltid'}</span></div>
+    <div><b>${esc(s.pace)}</b><span>pace</span></div>
+    <div><b>${esc(s.hr)}</b><span>puls</span></div>
+    <div><b>${countSteps(s.steps)}</b><span>Garmin-trin</span></div>
+    ${s.str?`<div><b>+20 min</b><span>${esc(s.str.name.toLowerCase())}</span></div>`:''}</div>
+  </div></header><div class="wrap">`;
+  if(opts.notice)h+=opts.notice;
+  h+=`<p class="muted" style="margin-top:1rem">${esc(s.sum)}</p>`;
+  h+=`<h2>Formål</h2><p>${esc(s.purpose)}</p>`;
+  if(s.split)h+=`<h2>${esc(s.split.label)}</h2><div class="splits">${s.split.rows.map(r=>`<div><b>${esc(r[1])}</b><span>${esc(r[0])}</span></div>`).join('')}</div>`;
+  h+=`<h2>Garmin-opsætning</h2><div class="card"><ol class="steps">${s.steps.map((x,i)=>stepHTML(x,i+1)).join('')}</ol></div>`;
+  if(s.garmin)h+=`<p class="muted" style="font-size:.88rem">${esc(s.garmin)}</p>`;
+  if(s.rules)h+=`<h2>Styring</h2><ul class="rules">${s.rules.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`;
+  if(s.str){
+    h+=`<h2>${esc(s.str.name)} · 20 min</h2><p class="muted">${esc(s.str.load)}</p>
+    <div class="card tablewrap"><table><tr><th>Øvelse</th><th>Sæt × reps</th><th>Fokus</th></tr>
+    ${s.str.ex.map(e=>`<tr><td>${esc(e[0])}</td><td class="n">${esc(e[1])}</td><td class="muted">${esc(e[2])}</td></tr>`).join('')}</table></div>`;
+    if(s.str.notes&&s.str.notes.length)h+=`<ul class="rules" style="margin-top:.7rem">${s.str.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`;
+  }
+  h+=`<button class="donebtn ${done?'is':''}" onclick="toggleDone(${wn},${d})">${done?'✓ Gennemført':'Markér som gennemført'}</button></div>`;
+  return h;
+}
+
+function weekHTML(wn){
+  saveWeek(wn);
+  const w=PROGRAM.weeks[wn-1], ti=dayIndex(), cw=Math.floor(ti/7)+1;
+  let total=0,cnt=0,dn=0;
+  for(let d=0;d<7;d++){const s=session(wn,d);if(s){cnt++;if(s.time&&s.kind!=='morning')total+=s.time;if(isDone(wn,d))dn++}}
+  let h=`<header class="hero"><div class="wrap">
+    <p class="kicker">Blok ${w.b}: ${esc(PROGRAM.blocks[w.b])}</p>
+    <h1>Uge ${wn}${w.dl?' – deload':''}${w.race?' – race':''}</h1>
+    <div class="meta"><div><b>~${w.km} km</b><span>ugevolumen</span></div>
+    <div><b>${Math.floor(total/60)} t ${total%60} m</b><span>løbetid ekskl. morgenløb</span></div>
+    <div><b>${mornings(wn)}</b><span>morgenløb</span></div>
+    <div><b>${dn}/${cnt}</b><span>gennemført</span></div></div>
+  </div></header><div class="wrap">
+  <div class="weekstrip" role="tablist">${PROGRAM.weeks.map(x=>`<button class="wk ${x.n===wn?'on':''} ${x.n===cw?'now':''} ${x.dl?'dl':''}" onclick="go('#/uge/${x.n}')" aria-label="Uge ${x.n}">${x.n}</button>`).join('')}</div>
+  <div class="weeknav"><button class="navbtn" ${wn===1?'disabled':''} onclick="go('#/uge/${wn-1}')" aria-label="Forrige uge">‹</button>
+    <div class="weektitle"><b>${dShort(dateOf(wn,0))} – ${dShort(dateOf(wn,6))}</b><span>${esc(w.label||PROGRAM.blocks[w.b])}</span></div>
+    <button class="navbtn" ${wn===NW?'disabled':''} onclick="go('#/uge/${wn+1}')" aria-label="Næste uge">›</button></div>
+  <ul class="days">`;
+  for(let d=0;d<7;d++){
+    const s=session(wn,d), date=dateOf(wn,d), isT=(wn-1)*7+d===ti;
+    if(!s){h+=`<li><div class="daycard rest ${isT?'today':''}"><div class="d"><b>${SD[d]}</b><span>${dShort(date)}</span></div><div><h3 class="muted" style="font-weight:500">Hvile</h3></div><div></div></div></li>`;continue}
+    const done=isDone(wn,d);
+    h+=`<li><button class="daycard ${isT?'today':''}" style="--c:${COL[s.kind]}" onclick="go('#/pas/${wn}/${d}')">
+      <div class="d"><b>${SD[d]}</b><span>${dShort(date)}</span></div>
+      <div><h3>${esc(s.title)}${s.str?`<span class="tag">${esc(s.str.name)}</span>`:''}</h3><p class="sum">${esc(s.sum)}</p></div>
+      <div class="t">${esc(tLabel(s))}${done?'<small>✓ Klaret</small>':''}</div></button></li>`;
+  }
+  h+=`</ul>${PROGRAM.footer?`<p class="muted" style="font-size:.85rem;margin-top:1rem">${esc(PROGRAM.footer)}</p>`:''}</div>`;
+  return h;
+}
+
+function nextSession(from){
+  for(let i=Math.max(0,from);i<NW*7;i++){const w=Math.floor(i/7)+1,d=i%7,s=session(w,d);if(s&&s.kind!=='morning')return [w,d]}
+  return null;
+}
+function todayHTML(){
+  const i=dayIndex(), t=todayDate(), label=`${DAYS[(t.getDay()+6)%7]} ${dLong(t)}`;
+  if(i>=0&&i<NW*7){const w=Math.floor(i/7)+1,d=i%7;if(session(w,d))return detailHTML(w,d,{kicker:'I dag'})}
+  const nx=i<NW*7?nextSession(i+1):null;
+  if(!nx){
+    const e=PROGRAM.end||{};
+    return `<header class="hero"><div class="wrap"><p class="kicker">${label}</p><h1>Programmet er gennemført</h1></div></header><div class="wrap">${e.title?`<div class="notice"><h3>${esc(e.title)}</h3><p>${esc(e.text||'')}</p></div>`:''}</div>`;
+  }
+  const msg=i<0?`Programmet starter mandag ${dLong(START)}. Første pas er herunder.`:'Hviledag. Restitution er en del af træningen – næste pas er herunder.';
+  return detailHTML(nx[0],nx[1],{kicker:'Næste pas',notice:`<div class="notice"><h3>${label}: ${i<0?'før start':'hvile'}</h3><p class="muted">${msg}</p></div>`});
+}
+
+function route(){
+  const h=location.hash||'#/';
+  const m=h.match(/^#\/(uge|pas)\/(\d+)(?:\/(\d))?/);
+  let html, prog=false;
+  if(m&&m[1]==='uge'){html=weekHTML(Math.min(NW,Math.max(1,+m[2])));prog=true}
+  else if(m&&m[1]==='pas'&&m[3]!==undefined&&+m[2]>=1&&+m[2]<=NW&&session(+m[2],+m[3])){html=detailHTML(+m[2],+m[3],{back:true});prog=true}
+  else html=todayHTML();
+  $('tab-today').classList.toggle('on',!prog);
+  $('tab-prog').classList.toggle('on',prog);
+  $('app').innerHTML=`<main class="view">${html}</main>`;
+  window.scrollTo(0,0);
+  const on=document.querySelector('.wk.on'); if(on) on.scrollIntoView({inline:'center',block:'nearest'});
+}
+
+function start(){
+  START=new Date(PROGRAM.start+'T00:00:00');
+  NW=PROGRAM.weeks.length;
+  document.title=PROGRAM.title||'NextStep';
+  const url='data:image/svg+xml,'+encodeURIComponent(ICON);
+  $('icon').href=url; $('touch-icon').href=url;
+  validate();
+  window.addEventListener('hashchange',route);
+  route();
+}
+
+/* Kontrol: alle pas og trin skal have pace og puls */
+function validate(){
+  const chk=(st,where)=>{
+    if(st.repeat){st.steps.forEach(x=>chk(x,where));return}
+    if(!st.pace||!st.hr) console.error(`Mangler pace/puls: ${where}, trin "${KIND[st.kind]} ${st.dur}"`);
+  };
+  for(let w=1;w<=NW;w++)for(let d=0;d<7;d++){
+    const s=session(w,d); if(!s) continue;
+    const where=`uge ${w} ${DAYS[d]} – ${s.title}`;
+    if(!s.pace||!s.hr) console.error(`Mangler pace/puls: ${where}`);
+    s.steps.forEach(st=>chk(st,where));
+  }
+}
+/* ============ Programindhold – 5 km · 12 uger ============ */
+/* Værdier fra Athlete-zones.md: LT-pace 4:29, LT-puls 169, LT1 150–155 */
+const OP=()=>[S('warm','15:00','5:45–6:15','130–145','Rolig start','hr')];
+const NL=(m=10)=>[S('cool',m+':00','6:15–6:45','<130','Rolig – restitutionszonen','hr')];
+const JOG=d=>S('rec',d,'6:30–7:00','<130','Rolig jog uden stop','none');
+const STRIDES=n=>R(n,[S('run','0:20','Hurtigt og afslappet (~3:45–4:00)','Styres ikke – stiger kort','Stride – hurtigt og afslappet, ikke sprint','none'),
+  S('rec','1:00','Gang/let jog','<130','','none')],'Strides');
+const PAUSE={'1:00':'60″','1:30':'90″','2:00':'2′'};
+
+function mileTest(){                         // Training-MileTest.md
+  return {kind:'test',title:'Mile-test',time:42,km:7,level:'Test',strength:'A',pace:'3:55–4:05',hr:'Styres ikke – mod max',
+    sum:'OP + 4×20″ strides + 1609 m maksimalt (~6:25, @3:55–4:05), puls styres ikke + NL',
+    purpose:'Måle aktuel form med et maksimalt løb over 1 mile og give grundlag for at opdatere LT-pace og pacezoner, så paces følger aktuel form og ikke målform.',
+    split:{label:'Splits ved ~6:25',rows:[['400 m','1:36'],['800 m','3:12'],['1200 m','4:48'],['1609 m','6:25']]},
+    steps:[...OP(),STRIDES(4),S('run','1609 m','3:55–4:05','Styres ikke – stiger mod max (189)','Maksimalt og jævnt – første 400 m ikke hurtigere end 1:36'),...NL(15)],
+    garmin:'Tryk "Lap" for hver 400 m – eller løb på bane og tag splits manuelt. Ved forrige test hurtigere end 6:25 bruges dens splits som udgangspunkt.',
+    rules:['Pace styrer i starten (splits pr. 400 m), derefter følelse; pulsen bruges ikke til styring.',
+      'Sidste 400 m må gerne være hurtigst.',
+      'Varme, stærk vind eller glat underlag: udskyd testen nogle dage.',
+      'Afbryd ved smerte i sener eller led.',
+      'Efter testen: ny LT-pace ≈ mile-pace + ~30″/km. Sammenhold med threshold-passene, opdatér zonerne, og genberegn programmets paces fra næste uge.']};
+}
+
+function t1020(blocks){                      // Training-10-20-30.md
+  const steps=[...OP()];
+  for(let i=0;i<blocks;i++){
+    steps.push(R(5,[S('rec','0:30','6:30–7:00','Styres ikke på 30″','Let jog (≈30 %)'),
+      S('run','0:20','4:50–5:15','Styres ikke på 20″','Moderat (≈60 %)'),
+      S('run','0:10','<4:20 – næsten maks','Over LT-puls (>169)','Næsten maksimal sprint','none')],'Blok '+(i+1)));
+    if(i<blocks-1) steps.push(S('rest','2:00','Gang/stå','<130','Gang eller stående hvile','none'));
+  }
+  steps.push(...NL());
+  return {kind:'speed',title:blocks+' × 10-20-30',time:25+blocks*5+(blocks-1)*2,km:+(4.1+blocks+(blocks-1)*.15).toFixed(1),
+    strength:'A',pace:'4:50–5:15',hr:'Op mod 169',
+    sum:`OP + ${blocks}×10-20-30 (20″ @4:50–5:15), puls op mod 169, 2′ gang + NL`,
+    purpose:'Hæve VO2max og løbsøkonomi med kort, hård intensitet over LT2 – fart og neuromuskulær rekruttering uden belastningen fra lange intervaller.',
+    steps,rules:['Rækkefølgen er 30 → 20 → 10, så sprinten kommer fra fart.',
+      '10″ styres på følelse – GPS-pace er upålidelig på 10″.',
+      'Pulsen må nærme sig LT-puls (169) i sidste blok.']};
+}
+
+function pyr(v,lvl,pause){                   // Training-Pyramid.md
+  const sub=lvl==='Sub-threshold', P=sub?'4:40–4:45':'4:30–4:35', H=sub?'159–164':'162–169', P2=sub?'4:28–4:32':'4:20–4:25';
+  const race=v==='3×3′', mins=race?[3,3,3]:v.split('-').map(Number), steps=[...OP()];
+  mins.forEach((m,i)=>{
+    steps.push(m===2?S('run','2:00',P2,'Når ikke LT-puls på 2′','Kort stykke – hurtigere end de lange')
+      :S('run',m+':00',P,H,m===8?'Pulsen højst 169 i slutningen':'Jævnt tempo'));
+    if(i<mins.length-1) steps.push(JOG(pause));
+  });
+  steps.push(...NL());
+  const work=mins.reduce((a,b)=>a+b,0), jog=(mins.length-1)*toS(pause)/60;
+  return {kind:'thr',title:race?'Threshold 3 × 3′':'Pyramide '+v,time:Math.round(25+work+jog),km:+(4.1+work/4.6+jog*.15).toFixed(1),
+    level:lvl,strength:'B',pace:P,hr:H,
+    sum:race?`OP + 3×3′ @${P}, puls ${H}, 2′ jog + NL`:`OP + ${v} min @${P} (2′ @${P2}), puls ${H}, ${PAUSE[pause]} jog + NL`,
+    purpose:race?'Vedligehold af threshold i race-ugen – ikke stimulus.'
+      :'Hæve LT2 og fartudholdenhed. Kontrolleret hårdt: kunne tale i korte sætninger, aldrig løb til udmattelse.',
+    steps,rules:['Pace styrer, puls kontrollerer.',
+      'Pulsen må højst nå 169 i slutningen af det længste stykke – når den 169 tidligt, sænkes tempoet 5″/km resten af passet.',
+      'Anden 5′ og sidste 2′ skal kunne holdes i planlagt pace; kan de ikke, droppes sidste 2′.',
+      'Varme, stærk vind eller kuperet rute: løb på puls, ikke pace.']};
+}
+
+function r400(n,lvl){                        // Training-20x400.md
+  const gen=lvl==='Genopbygning', P=gen?'4:40':'4:35–4:40', H=gen?'159–164':'159–168';
+  return {kind:'thr',title:n+' × 400 m',time:Math.round(25+n*3.15),km:+(4.1+n*.6).toFixed(1),level:gen?'Sub-threshold – genopbygning':'Sub-threshold',
+    strength:'B',pace:P,hr:H,
+    sum:`OP + ${n}×(400 m @${P} + 200 m jog), puls ${H} + NL`,
+    purpose:'Hæve LT2 og fartudholdenhed via mange korte stykker lige under LT – meget threshold-arbejde med lav mekanisk belastning pr. stykke.',
+    steps:[...OP(),R(n,[S('run','400 m',P,H+' (Z4, under 169)','Samme pace på alle stykker'),
+      S('rec','200 m','6:30–7:00','<130','Rolig jog uden stop','none')],n+' × 400 m'),...NL()],
+    rules:['Pace styrer, puls kontrollerer.',
+      'Pulsen skal blive i Z4 under 169; når den 169, sænkes tempoet 5″/km resten af passet.',
+      'Kan planlagt pace ikke holdes på de sidste stykker → stop passet og notér antal gennemførte.',
+      'Varme, stærk vind eller kuperet rute: løb på puls, ikke pace.']};
+}
+
+function tempo(min,lvl){                     // Training-Tempo.md
+  const rol=lvl==='Rolig tempo', P=rol?'4:40–4:45':'4:35–4:40', H=rol?'159–164':'159–168';
+  return {kind:'tempo',title:`Tempo ${min} min`,time:25+min,km:+(4.1+min/4.65).toFixed(1),level:lvl,strength:'B',pace:P,hr:H,
+    sum:`OP + ${min} min @${P}, puls ${H} + NL`,
+    purpose:'Hæve LT2 og evnen til at holde et højt, kontrolleret tempo sammenhængende uden pauser.',
+    steps:[...OP(),S('run',min+':00',P,H+' (Z4, under 169)','Jævnt tempo – første km ikke hurtigere end planlagt'),...NL()],
+    rules:['Pace styrer, puls kontrollerer.',
+      'Pulsen skal blive i Z4 under 169; når den 169, sænkes tempoet 5″/km resten af passet.',
+      'Kan planlagt pace ikke holdes de sidste minutter → afslut tempo-delen og løb nedløb.',
+      'Varme, stærk vind eller kuperet rute: løb på puls, ikke pace.']};
+}
+
+function longRun(km){                        // Training-LongRun.md
+  return {kind:'long',title:`Long run ${km} km`,time:Math.round(km*5.67+5),km:km+.4,pace:'5:30–5:50',hr:'135–145',
+    sum:`${km} km @5:30–5:50, puls 135–145 + 4×20″ strides`,
+    purpose:'Aerob basis under LT1 – kapillarisering, fedtforbrænding og gradvis opbygning af tid på benene.',
+    steps:[S('run',km+' km','5:30–5:50','135–145','Pulsen styrer – over 145 i længere tid: sæt farten ned','hr'),STRIDES(4)],
+    rules:['Pulsen styrer, ikke pacen. Over 145 i længere perioder er gråzone – sæt farten ned.',
+      'Varme, stærk vind eller kuperet rute: løb på puls, ikke pace.',
+      'Strides skal føles lette og hurtige – ikke udmattende.',
+      'Cardiac drift over ~5 % i anden halvdel = distancen er i overkanten lige nu.']};
+}
+
+function easy(km,n){                         // Training-EasyRun.md
+  const steps=[S('run',km+' km','5:45–6:00','<140','Pulsen styrer','hr')];
+  if(n) steps.push(STRIDES(n));
+  return {kind:'easy',title:`Rolig ${km} km`,time:Math.round(km*5.9+n*1.33),km:km+n*.07,pace:'5:45–6:00',hr:'<140',
+    sum:`${km} km @5:45–6:00, puls <140${n?` + ${n}×20″ strides`:''}`,
+    purpose:'Rolig aerob volumen under LT1 – restitution og basis mellem kvalitetspassene.',
+    steps,rules:['Pulsen styrer, ikke pacen; føles det let, løbes der ikke hurtigere.',
+      'Varme, stærk vind eller kuperet rute: løb på puls, ikke pace.',
+      n?'Strides skal føles lette og hurtige – ikke udmattende.':'Uden strides – dagen før et kvalitetspas.']};
+}
+
+function fiveK(){                            // Training-5KTest.md
+  return {kind:'race',title:'5 km-test',time:null,timeLabel:'~21:15',km:9.5,level:'Race',pace:'4:15',hr:'Styres ikke',
+    sum:'OP + 4×20″ strides + 5 km @4:15 (~21:15), puls styres ikke + NL',
+    purpose:'Afslutte programmet med et maksimalt 5 km og måle effekten – grundlag for næste blok og nye zoner.',
+    split:{label:'Splits ved ~21:15',rows:[['1 km','4:15'],['2 km','8:30'],['3 km','12:45'],['5 km','21:15']]},
+    steps:[...OP(),STRIDES(4),S('run','5 km','4:15','Styres ikke – over 169 i anden halvdel','Første km ikke hurtigere end 4:15; fra 3 km må tempoet øges'),...NL(15)],
+    garmin:'Auto-lap pr. km. Ved en hurtigere mile-test i uge 9 sættes 5K-pace til LT-pace −10–15″/km ud fra de nye zoner.',
+    rules:['Pace styrer de første 3 km, derefter følelse; pulsen bruges ikke til styring.',
+      'Varme, stærk vind eller kuperet rute: justér forventet tid i stedet for at presse pacen.',
+      'Efter testen: ny LT-pace ≈ 5K-pace + ~10–15″/km – opdatér zonerne.']};
+}
+
+const MORNING={kind:'morning',title:'Morgenløb (valgfrit)',time:15,pace:'6:15–6:45',hr:'<130',
+  sum:'15 min @6:15–6:45, puls <130',
+  purpose:'Valgfri ekstra aerob volumen i restitutionszonen.',
+  steps:[S('run','15:00','6:15–6:45','<130','Pulsen styrer','hr')],
+  rules:['Det første, der skæres ved træthed.']};
+const M=MORNING;
+
+function W(n,b,days,o={}){
+  let km=0;
+  days.forEach(f=>{if(!f)return;const s=typeof f==='function'?f():f;if(s.kind!=='morning')km+=s.km||0});
+  return {n,b,km:Math.round(km),days,...o};
+}
+
+const PROGRAM={
+  id:'5k-2026',title:'NextStep 5 km',start:'2026-11-02',
+  blocks:{1:'Genopbygning',2:'Opbygning',3:'Skarpning mod 5 km'},
+  weeks:[
+    W(1,1,[null,()=>mileTest(),()=>easy(3,0),()=>pyr('2-4-6-4-2','Sub-threshold','1:30'),M,()=>longRun(7),()=>easy(4,6)],{label:'Mile-test 1 – udgangspunkt'}),
+    W(2,1,[M,()=>t1020(2),()=>easy(5,0),()=>tempo(15,'Rolig tempo'),M,()=>longRun(8),()=>easy(4,6)]),
+    W(3,1,[M,()=>t1020(3),()=>easy(4,0),()=>r400(10,'Genopbygning'),M,()=>longRun(9),()=>easy(4,6)]),
+    W(4,1,[null,()=>t1020(2),()=>easy(4,0),()=>pyr('2-5-5-2','Sub-threshold','1:30'),null,()=>longRun(7),()=>easy(4,4)],{dl:true,label:'Deload'}),
+    W(5,2,[M,()=>mileTest(),()=>easy(5,0),()=>pyr('2-4-6-4-2','Threshold','1:00'),M,()=>longRun(9),()=>easy(5,6)],{label:'Mile-test 2'}),
+    W(6,2,[M,()=>t1020(3),()=>easy(6,0),()=>tempo(20,'Tempo'),M,()=>longRun(10),()=>easy(5,6)]),
+    W(7,2,[M,()=>t1020(4),()=>easy(6,0),()=>r400(10,'Standard'),M,()=>longRun(11),()=>easy(6,6)]),
+    W(8,2,[null,()=>t1020(2),()=>easy(5,0),()=>pyr('2-5-5-2','Threshold','1:30'),null,()=>longRun(8),()=>easy(4,4)],{dl:true,label:'Deload – jul'}),
+    W(9,3,[M,()=>mileTest(),()=>easy(6,0),()=>tempo(20,'Tempo'),M,()=>longRun(11),()=>easy(6,6)],{label:'Mile-test 3'}),
+    W(10,3,[M,()=>t1020(4),()=>easy(7,0),()=>pyr('2-4-6-4-2','Threshold','1:00'),M,()=>longRun(12),()=>easy(6,6)]),
+    W(11,3,[M,()=>t1020(3),()=>easy(7,0),()=>r400(10,'Standard'),M,()=>longRun(12),()=>easy(6,6)]),
+    W(12,3,[M,()=>t1020(2),()=>easy(5,4),()=>pyr('3×3′','Threshold','2:00'),null,()=>fiveK(),()=>easy(4,0)],{race:true,label:'Race-uge – 5 km-test lørdag'})
+  ],
+  strength:(t,w)=>{
+    const dl=w===4||w===8, race=w===12, s=dl||race?'2':'3';
+    const load=race?'Kun aktivering – lette vægte, ingen tunge sæt i race-ugen'
+      :dl?'Deload – kropsvægt, 2 sæt'
+      :w<=3?'Kropsvægt – lær bevægelserne'
+      :w<=7?'Let vægt (håndvægte eller rygsæk)':'Moderat vægt – god kontrol i hver gentagelse';
+    const ex=t==='A'?[
+      ['Excentriske tåhævninger, strakt knæ',s+' × 12','Achilles og læg'],
+      ['Bulgarsk split squat',s+' × 8/ben','Knæ- og hoftekraft'],
+      ['Etbens rumænsk dødløft',s+' × 8/ben','Baglår og balance'],
+      ['Hoftehævning på ét ben',s+' × 10/ben','Baller'],
+      ['Sideplanke',s+' × 30″/side','Hofte og core']
+    ]:[
+      ['Step-ups på højt trin',s+' × 10/ben','Afsæt'],
+      ['Excentriske tåhævninger, bøjet knæ',s+' × 15','Soleus'],
+      ['Copenhagen-planke (kort vægtstang)',s+' × 20″/side','Adduktorer'],
+      ['Dead bug',s+' × 10','Core'],
+      ['Pogo-hop på stedet',s+' × 20','Stivhed i ankel og fod']
+    ];
+    return {name:'Styrke '+t,load,ex,notes:['Ømhed højst 3/10 og væk inden næste kvalitetspas.','Styrke efter løbet samme dag – aldrig før kvalitetsdelen.']};
+  },
+  footer:'Ved træthed skæres morgenløb først, derefter søndagsvolumen – kvalitetspas beskyttes. Efter hver mile-test opdateres zonerne, og paces genberegnes fra næste uge. Stop op ved tidlige tegn på overbelastning: stigende puls ved samme pace, dårlig søvn eller ømhed i sener.',
+  end:{title:'Næste skridt',text:'Notér 5 km-tid og splits, opdatér zonerne, og planlæg næste blok ud fra træningsparadigmet.'}
+};
+start();
+</script>
+</body>
+</html>

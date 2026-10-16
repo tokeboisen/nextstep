@@ -1,0 +1,49 @@
+name: Deploy web app til GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Kun programmerne (WebApp/<Programnavn>/index.html) udgives – ingen .md-filer.
+      - name: Saml site
+        run: |
+          mkdir -p _site
+          for f in WebApp/*/index.html; do
+            dir=$(basename "$(dirname "$f")")
+            mkdir -p "_site/$dir"
+            cp "$f" "_site/$dir/index.html"
+          done
+          cat > _site/index.html <<'EOF'
+          <!DOCTYPE html>
+          <html lang="da"><head><meta charset="utf-8">
+          <meta http-equiv="refresh" content="0; url=tokeboisen/">
+          <title>NextStep</title></head>
+          <body><a href="tokeboisen/">NextStep</a></body></html>
+          EOF
+          find _site -type f
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
